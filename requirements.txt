@@ -1,0 +1,6 @@
+requests
+python-telegram-bot
+google-api-python-client
+google-auth-oauthlib
+python-dotenv
+telegraph

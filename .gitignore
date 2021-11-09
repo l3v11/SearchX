@@ -1,0 +1,12 @@
+config.env
+*.pyc
+downloads/*
+download/*
+data*
+.vscode
+.idea
+*.json
+log.txt
+accounts/*
+drive_list
+/temp.py
