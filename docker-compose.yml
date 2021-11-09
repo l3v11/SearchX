@@ -1,0 +1,5 @@
+services:
+  search-bot:
+    build: .
+    command: bash start.sh
+    restart: on-failure
