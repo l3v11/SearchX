@@ -23,15 +23,21 @@ LOGGER = logging.getLogger(__name__)
 def get_config(name: str):
     return os.environ[name]
 
-CONFIG_ENV_URL = os.environ.get('CONFIG_ENV_URL', None)
-if CONFIG_ENV_URL is not None:
-    res = requests.get(CONFIG_ENV_URL)
-    if res.status_code == 200:
-        with open('config.env', 'wb+') as f:
-            f.write(res.content)
-            f.close()
+try:
+    CONFIG_ENV_URL = get_config('CONFIG_ENV_URL')
+    if len(CONFIG_ENV_URL) == 0:
+        CONFIG_ENV_URL = None
     else:
-        LOGGER.error(f"Failed to load config.env file [{res.status_code}]")
+        res = requests.get(CONFIG_ENV_URL)
+        if res.status_code == 200:
+            with open('config.env', 'wb+') as f:
+                f.write(res.content)
+                f.close()
+        else:
+            LOGGER.error(f"Failed to load config.env file [{res.status_code}]")
+            raise KeyError
+except KeyError:
+    pass
 
 load_dotenv('config.env')
 
@@ -49,7 +55,7 @@ try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
 except KeyError:
-    LOGGER.error("BOT_TOKEN and/or OWNER_ID var is missing")
+    LOGGER.error("One or more env variables are missing")
     exit(1)
 
 try:

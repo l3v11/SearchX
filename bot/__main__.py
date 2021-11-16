@@ -11,7 +11,7 @@ def start(update, context):
         if update.message.chat.type == "private":
             sendMessage(f"Access granted", context.bot, update)
         else:
-            sendMessage(f"This is a bot for searching data on Google Drive", context.bot, update)
+            sendMessage(f"I'm alive :)", context.bot, update)
     else:
         sendMessage(f"Access denied", context.bot, update)
 

@@ -50,7 +50,6 @@ class GoogleDriveHelper:
         if not credentials or not credentials.valid:
             if credentials and credentials.expired and credentials.refresh_token:
                 credentials.refresh(Request())
-
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
 
     def get_recursive_list(self, file, root_id="root"):
@@ -161,21 +160,21 @@ class GoogleDriveHelper:
                     # Detect whether current entity is a folder or file
                     if file.get('mimeType') == "application/vnd.google-apps.folder":
                         msg += f"🗂️<code>{file.get('name')}</code> <b>(folder)</b><br>" \
-                               f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive</a></b>"
+                               f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive Link</a></b>"
                         if INDEX_URL[index] is not None:
                             url_path = "/".join(
                                 [requests.utils.quote(n, safe='') for n in self.get_recursive_list(file, parent_id)])
                             url = f'{INDEX_URL[index]}/{url_path}/'
-                            msg += f'<b> | <a href="{url}">DDL</a></b>'
+                            msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     else:
                         msg += f"📄<code>{file.get('name')}</code> <b>({self.get_readable_file_size(file.get('size'))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
-                               f"&export=download'>Drive</a></b>"
+                               f"&export=download'>Drive Link</a></b>"
                         if INDEX_URL[index] is not None:
                             url_path = "/".join(
                                 [requests.utils.quote(n, safe='') for n in self.get_recursive_list(file, parent_id)])
                             url = f'{INDEX_URL[index]}/{url_path}'
-                            msg += f'<b> | <a href="{url}">DDL</a></b>'
+                            msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     msg += '<br><br>'
                     content_count += 1
                     if content_count >= telegraph_limit:
