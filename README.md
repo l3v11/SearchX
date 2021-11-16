@@ -7,7 +7,7 @@
 
 <p align="center">
 
-## This is a Telegram Bot written in Python for searching data on Google Drive. Supports multiple Shared Drives (TDs).
+## This is a Telegram Bot written in Python for searching data on Google Drive. Supports multiple Shared Drives (TDs). Able to clone data from drive.
 
 </p>
 

@@ -4,16 +4,27 @@ import json
 import re
 import requests
 
+import urllib.parse as urlparse
+from urllib.parse import parse_qs
+from random import randrange
+
 from telegram import InlineKeyboardMarkup
 
 from google.auth.transport.requests import Request
+from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from tenacity import *
 
-from bot import LOGGER, DRIVE_NAME, DRIVE_ID, INDEX_URL, telegra_ph
+from bot import LOGGER, DRIVE_NAME, DRIVE_ID, INDEX_URL, telegra_ph, \
+    IS_TEAM_DRIVE, parent_id, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
 from bot.helper.telegram_helper import button_builder
 
 logging.getLogger('googleapiclient.discovery').setLevel(logging.ERROR)
+
+if USE_SERVICE_ACCOUNTS:
+    SERVICE_ACCOUNT_INDEX = randrange(len(os.listdir("accounts")))
 
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 telegraph_limit = 95
@@ -25,9 +36,16 @@ class GoogleDriveHelper:
         self.__G_DRIVE_TOKEN_FILE = "token.json"
         # Check https://developers.google.com/drive/scopes for all available scopes
         self.__OAUTH_SCOPE = ['https://www.googleapis.com/auth/drive']
+        self.__G_DRIVE_DIR_MIME_TYPE = "application/vnd.google-apps.folder"
+        self.__G_DRIVE_BASE_DOWNLOAD_URL = "https://drive.google.com/uc?id={}&export=download"
+        self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL = "https://drive.google.com/drive/folders/{}"
         self.__service = self.authorize()
         self.telegraph_content = []
         self.path = []
+        self.total_bytes = 0
+        self.total_files = 0
+        self.total_folders = 0
+        self.transferred_size = 0
 
     def get_readable_file_size(self, size_in_bytes) -> str:
         if size_in_bytes is None:
@@ -45,12 +63,195 @@ class GoogleDriveHelper:
     def authorize(self):
         # Get credentials
         credentials = None
-        if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
-            credentials = Credentials.from_authorized_user_file(self.__G_DRIVE_TOKEN_FILE, self.__OAUTH_SCOPE)
-        if not credentials or not credentials.valid:
-            if credentials and credentials.expired and credentials.refresh_token:
-                credentials.refresh(Request())
+        if not USE_SERVICE_ACCOUNTS:
+            if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
+                credentials = Credentials.from_authorized_user_file(self.__G_DRIVE_TOKEN_FILE, self.__OAUTH_SCOPE)
+            if credentials is None or not credentials.valid:
+                if credentials and credentials.expired and credentials.refresh_token:
+                    credentials.refresh(Request())
+        else:
+            LOGGER.info(f"Using SA file: {SERVICE_ACCOUNT_INDEX}.json")
+            credentials = service_account.Credentials.from_service_account_file(
+                f'accounts/{SERVICE_ACCOUNT_INDEX}.json', scopes=self.__OAUTH_SCOPE)
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+
+    @staticmethod
+    def getIdFromUrl(link: str):
+        if "folders" in link or "file" in link:
+            regex = r"https://drive\.google\.com/(drive)?/?u?/?\d?/?(mobile)?/?(file)?(folders)?/?d?/([-\w]+)[?+]?/?(w+)?"
+            res = re.search(regex,link)
+            if res is None:
+                raise IndexError("Drive ID not found")
+            return res.group(5)
+        parsed = urlparse.urlparse(link)
+        return parse_qs(parsed.query)['id'][0]
+
+    def switchServiceAccount(self):
+        global SERVICE_ACCOUNT_INDEX
+        service_account_count = len(os.listdir("accounts"))
+        if SERVICE_ACCOUNT_INDEX == service_account_count - 1:
+            SERVICE_ACCOUNT_INDEX = 0
+        SERVICE_ACCOUNT_INDEX += 1
+        LOGGER.info(f"Using SA file: {SERVICE_ACCOUNT_INDEX}.json")
+        self.__service = self.authorize()
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
+    def __set_permission(self, drive_id):
+        permissions = {
+            'role': 'reader',
+            'type': 'anyone',
+            'value': None,
+            'withLink': True
+        }
+        return self.__service.permissions().create(supportsTeamDrives=True, fileId=drive_id,
+                                                   body=permissions).execute()
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
+    def copyFile(self, file_id, dest_id):
+        body = {
+            'parents': [dest_id]
+        }
+
+        try:
+            res = self.__service.files().copy(supportsAllDrives=True,fileId=file_id,body=body).execute()
+            return res
+        except HttpError as err:
+            if err.resp.get('content-type', '').startswith('application/json'):
+                reason = json.loads(err.content).get('error').get('errors')[0].get('reason')
+                if reason == 'userRateLimitExceeded' or reason == 'dailyLimitExceeded':
+                    if USE_SERVICE_ACCOUNTS:
+                        self.switchServiceAccount()
+                        return self.copyFile(file_id, dest_id)
+                    else:
+                        LOGGER.info(f"Warning: {reason}")
+                        raise err
+                else:
+                    raise err
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
+    def getFileMetadata(self,file_id):
+        return self.__service.files().get(supportsAllDrives=True, fileId=file_id,
+                                              fields="name,id,mimeType,size").execute()
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
+    def getFilesByFolderId(self,folder_id):
+        page_token = None
+        q = f"'{folder_id}' in parents"
+        files = []
+        while True:
+            response = self.__service.files().list(supportsTeamDrives=True,
+                                                   includeTeamDriveItems=True,
+                                                   q=q,
+                                                   spaces='drive',
+                                                   pageSize=200,
+                                                   fields='nextPageToken, files(id, name, mimeType,size)',
+                                                   pageToken=page_token).execute()
+            for file in response.get('files', []):
+                files.append(file)
+            page_token = response.get('nextPageToken', None)
+            if page_token is None:
+                break
+        return files
+
+    def clone(self, link):
+        self.transferred_size = 0
+        self.total_files = 0
+        self.total_folders = 0
+        try:
+            file_id = self.getIdFromUrl(link)
+        except (KeyError,IndexError):
+            msg = "Drive ID not found"
+            return msg
+        msg = ""
+        LOGGER.info(f"Cloning: {file_id}")
+        try:
+            meta = self.getFileMetadata(file_id)
+            if meta.get("mimeType") == self.__G_DRIVE_DIR_MIME_TYPE:
+                dir_id = self.create_directory(meta.get('name'), parent_id)
+                result = self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
+                msg += f'<b>Filename: </b><code>{meta.get("name")}</code>'
+                msg += f'\n<b>Size: </b><code>{self.get_readable_file_size(self.transferred_size)}</code>'
+                msg += f"\n<b>Type: </b>Folder"
+                msg += f"\n<b>SubFolders: </b>{self.total_folders}"
+                msg += f"\n<b>Files: </b>{self.total_files}"
+                msg += f'\n\n<a href="{self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)}">☁️ Drive Link ☁️</a>'
+                if DRIVE_INDEX_URL is not None:
+                    url = requests.utils.requote_uri(f'{DRIVE_INDEX_URL}/{meta.get("name")}/')
+                    msg += f' | <a href="{url}">🔗 Index Link 🔗</a>'
+            else:
+                file = self.copyFile(meta.get('id'), parent_id)
+                try:
+                    typ = file.get('mimeType')
+                except:
+                    typ = 'File' 
+                msg += f'<b>Filename: </b><code>{file.get("name")}</code>'
+                try:
+                    msg += f'\n<b>Size: </b><code>{self.get_readable_file_size(int(meta.get("size")))}</code>'
+                    msg += f'\n<b>Type: </b>{typ}'
+                    msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">☁️ Drive Link ☁️</a>'
+                except TypeError:
+                    pass
+                if DRIVE_INDEX_URL is not None:
+                    url = requests.utils.requote_uri(f'{DRIVE_INDEX_URL}/{file.get("name")}')
+                    msg += f' | <a href="{url}">🔗 Index Link 🔗</a>'
+        except Exception as err:
+            if isinstance(err, RetryError):
+                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                err = err.last_attempt.exception()
+            err = str(err).replace('>', '').replace('<', '')
+            LOGGER.error(err)
+            return err
+        return msg
+
+    def cloneFolder(self, name, local_path, folder_id, parent_id):
+        LOGGER.info(f"Syncing: {local_path}")
+        files = self.getFilesByFolderId(folder_id)
+        new_id = None
+        if len(files) == 0:
+            return parent_id
+        for file in files:
+            if file.get('mimeType') == self.__G_DRIVE_DIR_MIME_TYPE:
+                self.total_folders += 1
+                file_path = os.path.join(local_path, file.get('name'))
+                current_dir_id = self.create_directory(file.get('name'), parent_id)
+                new_id = self.cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
+            else:
+                try:
+                    self.total_files += 1
+                    self.transferred_size += int(file.get('size'))
+                except TypeError:
+                    pass
+                try:
+                    self.copyFile(file.get('id'), parent_id)
+                    new_id = parent_id
+                except Exception as e:
+                    if isinstance(e, RetryError):
+                        LOGGER.info(f"Total Attempts: {e.last_attempt.attempt_number}")
+                        err = e.last_attempt.exception()
+                    else:
+                        err = e
+                    LOGGER.error(err)
+        return new_id
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
+    def create_directory(self, directory_name, parent_id):
+        file_metadata = {
+            "name": directory_name,
+            "mimeType": self.__G_DRIVE_DIR_MIME_TYPE
+        }
+        if parent_id is not None:
+            file_metadata["parents"] = [parent_id]
+        file = self.__service.files().create(supportsTeamDrives=True, body=file_metadata).execute()
+        file_id = file.get("id")
+        if not IS_TEAM_DRIVE:
+            self.__set_permission(file_id)
+        LOGGER.info("Created: {}".format(file.get("name")))
+        return file_id
 
     def get_recursive_list(self, file, root_id="root"):
         return_list = []

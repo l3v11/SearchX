@@ -4,11 +4,15 @@ import time
 import random
 import string
 import requests
+import subprocess
+import socket
 
 import telegram.ext as tg
 
 from dotenv import load_dotenv
 from telegraph import Telegraph
+
+socket.setdefaulttimeout(600)
 
 if os.path.exists('log.txt'):
     with open('log.txt', 'r+') as f:
@@ -54,6 +58,7 @@ except:
 try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
+    parent_id = get_config('DRIVE_FOLDER_ID')
 except KeyError:
     LOGGER.error("One or more env variables are missing")
     exit(1)
@@ -67,6 +72,48 @@ try:
 except:
     LOGGER.error("Failed to create token.json file")
     exit(1)
+
+try:
+    DRIVE_INDEX_URL = get_config('DRIVE_INDEX_URL')
+    if len(DRIVE_INDEX_URL) == 0:
+        DRIVE_INDEX_URL = None
+except KeyError:
+    DRIVE_INDEX_URL = None
+try:
+    IS_TEAM_DRIVE = get_config('IS_TEAM_DRIVE')
+    if IS_TEAM_DRIVE.lower() == 'true':
+        IS_TEAM_DRIVE = True
+    else:
+        IS_TEAM_DRIVE = False
+except KeyError:
+    IS_TEAM_DRIVE = False
+
+try:
+    USE_SERVICE_ACCOUNTS = get_config('USE_SERVICE_ACCOUNTS')
+    if USE_SERVICE_ACCOUNTS.lower() == 'true':
+        USE_SERVICE_ACCOUNTS = True
+    else:
+        USE_SERVICE_ACCOUNTS = False
+except KeyError:
+    USE_SERVICE_ACCOUNTS = False
+
+try:
+    ACCOUNTS_ZIP_URL = get_config('ACCOUNTS_ZIP_URL')
+    if len(ACCOUNTS_ZIP_URL) == 0:
+        ACCOUNTS_ZIP_URL = None
+    else:
+        res = requests.get(ACCOUNTS_ZIP_URL)
+        if res.status_code == 200:
+            with open('accounts.zip', 'wb+') as f:
+                f.write(res.content)
+                f.close()
+        else:
+            LOGGER.error(f"Failed to load accounts.zip file [{res.status_code}]")
+            raise KeyError
+        subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
+        os.remove("accounts.zip")
+except KeyError:
+    pass
 
 try:
     DRIVE_LIST_URL = get_config('DRIVE_LIST_URL')

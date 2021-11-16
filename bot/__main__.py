@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler
 
 from bot import AUTHORIZED_CHATS, dispatcher, updater
-from bot.modules import auth, list, shell
+from bot.modules import auth, clone, list, shell
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import *
