@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler
 
 from bot import AUTHORIZED_CHATS, dispatcher, updater
-from bot.modules import auth, clone, list, shell
+from bot.modules import auth, clone, count, delete, list, shell
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import *
@@ -15,15 +15,48 @@ def start(update, context):
     else:
         sendMessage(f"Access denied", context.bot, update)
 
+def bot_help(update, context):
+    help_string = f'''
+<u><i><b>Usage:</b></i></u>
+
+For <i>folder</i> results only:
+<code>/{BotCommands.ListCommand} -d &lt;query&gt;</code>
+
+For <i>file</i> results only:
+<code>/{BotCommands.ListCommand} -f &lt;query&gt;</code>
+
+<u><i><b>Commands:</b></i></u>
+
+/{BotCommands.StartCommand}: Start the bot
+
+/{BotCommands.ListCommand} [query]: Search data on Drives
+
+/{BotCommands.CloneCommand} [drive_url]: Copy data to Drive
+
+/{BotCommands.CountCommand} [drive_url]: Count data of Drive
+
+/{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only Owner)
+
+/{BotCommands.AuthUsersCommand}: View authorized chats (Only Owner)
+
+/{BotCommands.ShellCommand} [cmd]: Execute bash commands (Only Owner)
+
+/{BotCommands.LogCommand}: Get the log file (Only owner)
+'''
+    sendMessage(help_string, context.bot, update)
+
 def log(update, context):
     send_log_file(context.bot, update)
 
 def main():
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
+    help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
+                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
                                  filters=CustomFilters.owner_filter, run_async=True)
 
     dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(help_handler)
     dispatcher.add_handler(log_handler)
 
     updater.start_polling()

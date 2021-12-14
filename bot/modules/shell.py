@@ -1,30 +1,29 @@
 import subprocess
 
-from telegram import ParseMode
 from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import sendMessage
+
 
 def shell(update, context):
+    LOGGER.info('User: {} [{}]'.format(update.message.chat.first_name, update.message.chat_id))
     message = update.effective_message
     cmd = message.text.split(' ', 1)
     if len(cmd) == 1:
-        message.reply_text('Send a command to execute')
-        return
+        return sendMessage('Send a command to execute', context.bot, update)
     cmd = cmd[1]
-    process = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = process.communicate()
+    process = subprocess.run(cmd, capture_output=True, shell=True)
     reply = ''
-    stdout = stdout.decode()
-    stderr = stderr.decode()
-    if stdout:
-        reply += f"*Stdout*\n`{stdout}`\n"
+    stderr = process.stderr.decode('utf-8')
+    stdout = process.stdout.decode('utf-8')
+    if len(stdout) != 0:
+        reply += f"<b>Stdout</b>\n<code>{stdout}</code>\n"
         LOGGER.info(f"Shell: {cmd}")
-    if stderr:
-        reply += f"*Stderr*\n`{stderr}`\n"
+    if len(stderr) != 0:
+        reply += f"<b>Stderr</b>\n<code>{stderr}</code>\n"
         LOGGER.error(f"Shell: {cmd}")
     if len(reply) > 3000:
         with open('shell_output.txt', 'w') as file:
@@ -35,8 +34,11 @@ def shell(update, context):
                 filename=doc.name,
                 reply_to_message_id=message.message_id,
                 chat_id=message.chat_id)
+    elif len(reply) != 0:
+        sendMessage(reply, context.bot, update)
     else:
-        message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        sendMessage('No Reply', context.bot, update)
+
 
 shell_handler = CommandHandler(BotCommands.ShellCommand, shell,
                                filters=CustomFilters.owner_filter, run_async=True)

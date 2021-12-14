@@ -19,6 +19,7 @@ from tenacity import *
 
 from bot import LOGGER, DRIVE_NAME, DRIVE_ID, INDEX_URL, telegra_ph, \
     IS_TEAM_DRIVE, parent_id, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
+from bot.helper.ext_utils.bot_utils import *
 from bot.helper.telegram_helper import button_builder
 
 logging.getLogger('googleapiclient.discovery').setLevel(logging.ERROR)
@@ -26,7 +27,6 @@ logging.getLogger('googleapiclient.discovery').setLevel(logging.ERROR)
 if USE_SERVICE_ACCOUNTS:
     SERVICE_ACCOUNT_INDEX = randrange(len(os.listdir("accounts")))
 
-SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 telegraph_limit = 95
 
 class GoogleDriveHelper:
@@ -47,19 +47,6 @@ class GoogleDriveHelper:
         self.total_folders = 0
         self.transferred_size = 0
 
-    def get_readable_file_size(self, size_in_bytes) -> str:
-        if size_in_bytes is None:
-            return '0B'
-        index = 0
-        size_in_bytes = int(size_in_bytes)
-        while size_in_bytes >= 1024:
-            size_in_bytes /= 1024
-            index += 1
-        try:
-            return f'{round(size_in_bytes, 2)}{SIZE_UNITS[index]}'
-        except IndexError:
-            return 'File too large'
-
     def authorize(self):
         # Get credentials
         credentials = None
@@ -79,12 +66,35 @@ class GoogleDriveHelper:
     def getIdFromUrl(link: str):
         if "folders" in link or "file" in link:
             regex = r"https://drive\.google\.com/(drive)?/?u?/?\d?/?(mobile)?/?(file)?(folders)?/?d?/([-\w]+)[?+]?/?(w+)?"
-            res = re.search(regex,link)
+            res = re.search(regex, link)
             if res is None:
                 raise IndexError("Drive ID not found")
             return res.group(5)
         parsed = urlparse.urlparse(link)
         return parse_qs(parsed.query)['id'][0]
+
+    def deletefile(self, link: str):
+        try:
+            file_id = self.getIdFromUrl(link)
+        except (KeyError, IndexError):
+            msg = "Drive ID not found"
+            return msg
+        msg = ''
+        LOGGER.info(f"Deleting: {file_id}")
+        try:
+            res = self.__service.files().delete(fileId=file_id, supportsTeamDrives=IS_TEAM_DRIVE).execute()
+            msg = "Successfully deleted"
+            LOGGER.info(f"{msg}")
+        except HttpError as err:
+            if "File not found" in str(err):
+                msg = "No such file exists"
+            elif "insufficientFilePermissions" in str(err):
+                msg = "Insufficient file permissions"
+            else:
+                msg = str(err)
+            LOGGER.error(f"{msg}")
+        finally:
+            return msg
 
     def switchServiceAccount(self):
         global SERVICE_ACCOUNT_INDEX
@@ -132,13 +142,13 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
-    def getFileMetadata(self,file_id):
+    def getFileMetadata(self, file_id):
         return self.__service.files().get(supportsAllDrives=True, fileId=file_id,
-                                              fields="name,id,mimeType,size").execute()
+                                              fields="name, id, mimeType, size").execute()
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
-    def getFilesByFolderId(self,folder_id):
+    def getFilesByFolderId(self, folder_id):
         page_token = None
         q = f"'{folder_id}' in parents"
         files = []
@@ -163,7 +173,7 @@ class GoogleDriveHelper:
         self.total_folders = 0
         try:
             file_id = self.getIdFromUrl(link)
-        except (KeyError,IndexError):
+        except (KeyError, IndexError):
             msg = "Drive ID not found"
             return msg
         msg = ""
@@ -174,7 +184,7 @@ class GoogleDriveHelper:
                 dir_id = self.create_directory(meta.get('name'), parent_id)
                 result = self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 msg += f'<b>Filename: </b><code>{meta.get("name")}</code>'
-                msg += f'\n<b>Size: </b><code>{self.get_readable_file_size(self.transferred_size)}</code>'
+                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.transferred_size)}</code>'
                 msg += f"\n<b>Type: </b>Folder"
                 msg += f"\n<b>SubFolders: </b>{self.total_folders}"
                 msg += f"\n<b>Files: </b>{self.total_files}"
@@ -190,7 +200,7 @@ class GoogleDriveHelper:
                     typ = 'File' 
                 msg += f'<b>Filename: </b><code>{file.get("name")}</code>'
                 try:
-                    msg += f'\n<b>Size: </b><code>{self.get_readable_file_size(int(meta.get("size")))}</code>'
+                    msg += f'\n<b>Size: </b><code>{get_readable_file_size(int(meta.get("size")))}</code>'
                     msg += f'\n<b>Type: </b>{typ}'
                     msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">☁️ Drive Link ☁️</a>'
                 except TypeError:
@@ -252,6 +262,65 @@ class GoogleDriveHelper:
             self.__set_permission(file_id)
         LOGGER.info("Created: {}".format(file.get("name")))
         return file_id
+
+    def count(self, link):
+        try:
+            file_id = self.getIdFromUrl(link)
+        except (KeyError, IndexError):
+            msg = "Drive ID not found"
+            return msg
+        msg = ""
+        LOGGER.info(f"Counting: {file_id}")
+        try:
+            meta = self.getFileMetadata(file_id)
+            mime_type = meta.get('mimeType')
+            if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
+                self.gDrive_directory(meta)
+                msg += f'<b>Name: </b><code>{meta.get("name")}</code>'
+                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.total_bytes)}</code>'
+                msg += f'\n<b>Type: </b>Folder'
+                msg += f'\n<b>SubFolders: </b>{self.total_folders}'
+                msg += f'\n<b>Files: </b>{self.total_files}'
+            else:
+                msg += f'<b>Name: </b><code>{meta.get("name")}</code>'
+                if mime_type is None:
+                    mime_type = 'File'
+                self.total_files += 1
+                self.gDrive_file(meta)
+                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.total_bytes)}</code>'
+                msg += f'\n<b>Type: </b>{mime_type}'
+                msg += f'\n<b>Files: </b>{self.total_files}'
+        except Exception as err:
+            if isinstance(err, RetryError):
+                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                err = err.last_attempt.exception()
+            err = str(err).replace('>', '').replace('<', '')
+            LOGGER.error(err)
+            return err
+        return msg
+
+    def gDrive_file(self, filee):
+        size = int(filee.get('size', 0))
+        self.total_bytes += size
+
+    def gDrive_directory(self, drive_folder):
+        files = self.getFilesByFolderId(drive_folder['id'])
+        if len(files) == 0:
+            return
+        for filee in files:
+            shortcut_details = filee.get('shortcutDetails')
+            if shortcut_details is not None:
+                mime_type = shortcut_details['targetMimeType']
+                file_id = shortcut_details['targetId']
+                filee = self.getFileMetadata(file_id)
+            else:
+                mime_type = filee.get('mimeType')
+            if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
+                self.total_folders += 1
+                self.gDrive_directory(filee)
+            else:
+                self.total_files += 1
+                self.gDrive_file(filee)
 
     def get_recursive_list(self, file, root_id="root"):
         return_list = []
@@ -368,7 +437,7 @@ class GoogleDriveHelper:
                             url = f'{INDEX_URL[index]}/{url_path}/'
                             msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     else:
-                        msg += f"📄<code>{file.get('name')}</code> <b>({self.get_readable_file_size(file.get('size'))})" \
+                        msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(file.get('size'))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
                                f"&export=download'>Drive Link</a></b>"
                         if INDEX_URL[index] is not None:
