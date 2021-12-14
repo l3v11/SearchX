@@ -150,12 +150,12 @@ class GoogleDriveHelper:
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def getFilesByFolderId(self, folder_id):
         page_token = None
-        q = f"'{folder_id}' in parents"
+        query = f"'{folder_id}' in parents and trashed = false"
         files = []
         while True:
             response = self.__service.files().list(supportsTeamDrives=True,
                                                    includeTeamDriveItems=True,
-                                                   q=q,
+                                                   q=query,
                                                    spaces='drive',
                                                    pageSize=200,
                                                    fields='nextPageToken, files(id, name, mimeType,size)',
@@ -437,7 +437,7 @@ class GoogleDriveHelper:
                             url = f'{INDEX_URL[index]}/{url_path}/'
                             msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     else:
-                        msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(file.get('size'))})" \
+                        msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size')))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
                                f"&export=download'>Drive Link</a></b>"
                         if INDEX_URL[index] is not None:
