@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 
 @new_thread
 def countNode(update, context):
-    LOGGER.info('User: {} [{}]'.format(update.message.chat.first_name, update.message.chat_id))
+    LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     args = update.message.text.split(" ", maxsplit=1)
     if len(args) > 1:
         link = args[1]

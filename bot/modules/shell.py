@@ -7,9 +7,8 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
 
-
 def shell(update, context):
-    LOGGER.info('User: {} [{}]'.format(update.message.chat.first_name, update.message.chat_id))
+    LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     message = update.effective_message
     cmd = message.text.split(' ', 1)
     if len(cmd) == 1:
@@ -38,7 +37,6 @@ def shell(update, context):
         sendMessage(reply, context.bot, update)
     else:
         sendMessage('No Reply', context.bot, update)
-
 
 shell_handler = CommandHandler(BotCommands.ShellCommand, shell,
                                filters=CustomFilters.owner_filter, run_async=True)

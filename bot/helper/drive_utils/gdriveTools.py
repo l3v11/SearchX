@@ -123,9 +123,8 @@ class GoogleDriveHelper:
         body = {
             'parents': [dest_id]
         }
-
         try:
-            res = self.__service.files().copy(supportsAllDrives=True,fileId=file_id,body=body).execute()
+            res = self.__service.files().copy(supportsAllDrives=True, fileId=file_id, body=body).execute()
             return res
         except HttpError as err:
             if err.resp.get('content-type', '').startswith('application/json'):
@@ -158,7 +157,7 @@ class GoogleDriveHelper:
                                                    q=query,
                                                    spaces='drive',
                                                    pageSize=200,
-                                                   fields='nextPageToken, files(id, name, mimeType,size)',
+                                                   fields='nextPageToken, files(id, name, mimeType, size)',
                                                    pageToken=page_token).execute()
             for file in response.get('files', []):
                 files.append(file)
@@ -184,14 +183,14 @@ class GoogleDriveHelper:
                 dir_id = self.create_directory(meta.get('name'), parent_id)
                 result = self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 msg += f'<b>Filename: </b><code>{meta.get("name")}</code>'
-                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.transferred_size)}</code>'
+                msg += f'\n<b>Size: </b>{get_readable_file_size(self.transferred_size)}'
                 msg += f"\n<b>Type: </b>Folder"
                 msg += f"\n<b>SubFolders: </b>{self.total_folders}"
                 msg += f"\n<b>Files: </b>{self.total_files}"
-                msg += f'\n\n<a href="{self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)}">☁️ Drive Link ☁️</a>'
+                msg += f'\n\n<a href="{self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)}">Drive Link</a>'
                 if DRIVE_INDEX_URL is not None:
                     url = requests.utils.requote_uri(f'{DRIVE_INDEX_URL}/{meta.get("name")}/')
-                    msg += f' | <a href="{url}">🔗 Index Link 🔗</a>'
+                    msg += f' | <a href="{url}">Index Link</a>'
             else:
                 file = self.copyFile(meta.get('id'), parent_id)
                 try:
@@ -200,17 +199,17 @@ class GoogleDriveHelper:
                     typ = 'File' 
                 msg += f'<b>Filename: </b><code>{file.get("name")}</code>'
                 try:
-                    msg += f'\n<b>Size: </b><code>{get_readable_file_size(int(meta.get("size")))}</code>'
+                    msg += f'\n<b>Size: </b>{get_readable_file_size(int(meta.get("size")))}'
                     msg += f'\n<b>Type: </b>{typ}'
-                    msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">☁️ Drive Link ☁️</a>'
+                    msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">Drive Link</a>'
                 except TypeError:
                     pass
                 if DRIVE_INDEX_URL is not None:
                     url = requests.utils.requote_uri(f'{DRIVE_INDEX_URL}/{file.get("name")}')
-                    msg += f' | <a href="{url}">🔗 Index Link 🔗</a>'
+                    msg += f' | <a href="{url}">Index Link</a>'
         except Exception as err:
             if isinstance(err, RetryError):
-                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)
@@ -240,7 +239,7 @@ class GoogleDriveHelper:
                     new_id = parent_id
                 except Exception as e:
                     if isinstance(e, RetryError):
-                        LOGGER.info(f"Total Attempts: {e.last_attempt.attempt_number}")
+                        LOGGER.info(f"Total attempts: {e.last_attempt.attempt_number}")
                         err = e.last_attempt.exception()
                     else:
                         err = e
@@ -277,7 +276,7 @@ class GoogleDriveHelper:
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
                 self.gDrive_directory(meta)
                 msg += f'<b>Name: </b><code>{meta.get("name")}</code>'
-                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.total_bytes)}</code>'
+                msg += f'\n<b>Size: </b>{get_readable_file_size(self.total_bytes)}'
                 msg += f'\n<b>Type: </b>Folder'
                 msg += f'\n<b>SubFolders: </b>{self.total_folders}'
                 msg += f'\n<b>Files: </b>{self.total_files}'
@@ -287,12 +286,12 @@ class GoogleDriveHelper:
                     mime_type = 'File'
                 self.total_files += 1
                 self.gDrive_file(meta)
-                msg += f'\n<b>Size: </b><code>{get_readable_file_size(self.total_bytes)}</code>'
+                msg += f'\n<b>Size: </b>{get_readable_file_size(self.total_bytes)}'
                 msg += f'\n<b>Type: </b>{mime_type}'
                 msg += f'\n<b>Files: </b>{self.total_files}'
         except Exception as err:
             if isinstance(err, RetryError):
-                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)
