@@ -14,12 +14,14 @@ def countNode(update, context):
     if len(args) > 1:
         link = args[1]
         msg = sendMessage(f"<b>Counting:</b> <code>{link}</code>", context.bot, update)
+        LOGGER.info(f"Counting: {link}")
         gd = GoogleDriveHelper()
         result = gd.count(link)
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update)
     else:
         sendMessage("Send a drive link along with command", context.bot, update)
+        LOGGER.info("Counting: None")
 
 count_handler = CommandHandler(BotCommands.CountCommand, countNode,
                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

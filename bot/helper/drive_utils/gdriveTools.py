@@ -78,13 +78,12 @@ class GoogleDriveHelper:
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             msg = "Drive ID not found"
+            LOGGER.error(f"{msg}")
             return msg
         msg = ''
-        LOGGER.info(f"Deleting: {file_id}")
         try:
             res = self.__service.files().delete(fileId=file_id, supportsTeamDrives=IS_TEAM_DRIVE).execute()
             msg = "Successfully deleted"
-            LOGGER.info(f"{msg}")
         except HttpError as err:
             if "File not found" in str(err):
                 msg = "No such file exists"
@@ -174,9 +173,9 @@ class GoogleDriveHelper:
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             msg = "Drive ID not found"
+            LOGGER.error(f"{msg}")
             return msg
         msg = ""
-        LOGGER.info(f"Cloning: {file_id}")
         try:
             meta = self.getFileMetadata(file_id)
             if meta.get("mimeType") == self.__G_DRIVE_DIR_MIME_TYPE:
@@ -267,9 +266,9 @@ class GoogleDriveHelper:
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             msg = "Drive ID not found"
+            LOGGER.error(f"{msg}")
             return msg
         msg = ""
-        LOGGER.info(f"Counting: {file_id}")
         try:
             meta = self.getFileMetadata(file_id)
             mime_type = meta.get('mimeType')

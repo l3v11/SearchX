@@ -12,8 +12,10 @@ def start(update, context):
             sendMessage(f"Access granted", context.bot, update)
         else:
             sendMessage(f"I'm alive :)", context.bot, update)
+        LOGGER.info('Granted: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     else:
         sendMessage(f"Access denied", context.bot, update)
+        LOGGER.info('Denied: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
 
 def bot_help(update, context):
     help_string = f'''
@@ -42,6 +44,8 @@ For <i>file</i> results only:
 /{BotCommands.ShellCommand} [cmd]: Execute bash commands (Only Owner)
 
 /{BotCommands.LogCommand}: Get the log file (Only owner)
+
+/{BotCommands.HelpCommand}: Get this message
 '''
     sendMessage(help_string, context.bot, update)
 

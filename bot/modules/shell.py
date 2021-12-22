@@ -12,6 +12,7 @@ def shell(update, context):
     message = update.effective_message
     cmd = message.text.split(' ', 1)
     if len(cmd) == 1:
+        LOGGER.info("Shell: None")
         return sendMessage('Send a command to execute', context.bot, update)
     cmd = cmd[1]
     process = subprocess.run(cmd, capture_output=True, shell=True)

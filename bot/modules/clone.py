@@ -14,12 +14,14 @@ def cloneNode(update, context):
     if len(args) > 1:
         link = args[1]
         msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update)
+        LOGGER.info(f"Cloning: {link}")
         gd = GoogleDriveHelper()
         result = gd.clone(link)
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update)
     else:
         sendMessage("Send a drive link along with command", context.bot, update)
+        LOGGER.info("Cloning: None")
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
