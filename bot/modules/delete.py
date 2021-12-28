@@ -2,7 +2,7 @@ from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import new_thread
+from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -13,6 +13,9 @@ def deleteNode(update, context):
     args = update.message.text.split(" ", maxsplit=1)
     if len(args) > 1:
         link = args[1]
+    else:
+        link = ''
+    if is_gdrive_link(link):
         msg = sendMessage(f"<b>Deleting:</b> <code>{link}</code>", context.bot, update)
         LOGGER.info(f"Deleting: {link}")
         gd = GoogleDriveHelper()

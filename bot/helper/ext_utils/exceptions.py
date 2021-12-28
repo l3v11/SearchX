@@ -1,0 +1,2 @@
+class GDToTException(Exception):
+    pass

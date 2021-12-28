@@ -45,7 +45,6 @@ except KeyError:
 load_dotenv('config.env')
 
 AUTHORIZED_CHATS = set()
-
 try:
     auths = get_config('AUTHORIZED_CHATS')
     auths = auths.split(" ")
@@ -73,12 +72,6 @@ except:
     exit(1)
 
 try:
-    DRIVE_INDEX_URL = get_config('DRIVE_INDEX_URL')
-    if len(DRIVE_INDEX_URL) == 0:
-        DRIVE_INDEX_URL = None
-except KeyError:
-    DRIVE_INDEX_URL = None
-try:
     IS_TEAM_DRIVE = get_config('IS_TEAM_DRIVE')
     if IS_TEAM_DRIVE.lower() == 'true':
         IS_TEAM_DRIVE = True
@@ -95,6 +88,22 @@ try:
         USE_SERVICE_ACCOUNTS = False
 except KeyError:
     USE_SERVICE_ACCOUNTS = False
+
+try:
+    PHPSESSID = get_config('PHPSESSID')
+    CRYPT = get_config('CRYPT')
+    if len(PHPSESSID) == 0 or len(CRYPT) == 0:
+        raise KeyError
+except KeyError:
+    PHPSESSID = None
+    CRYPT = None
+
+try:
+    DRIVE_INDEX_URL = get_config('DRIVE_INDEX_URL')
+    if len(DRIVE_INDEX_URL) == 0:
+        DRIVE_INDEX_URL = None
+except KeyError:
+    DRIVE_INDEX_URL = None
 
 try:
     ACCOUNTS_ZIP_URL = get_config('ACCOUNTS_ZIP_URL')

@@ -1,8 +1,9 @@
-requests
-python-telegram-bot
+beautifulsoup4
 google-api-python-client
 google-auth-oauthlib
 python-dotenv
+python-magic
+python-telegram-bot
+requests
 telegraph
 tenacity
-python-magic
