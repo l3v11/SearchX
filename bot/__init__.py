@@ -45,11 +45,18 @@ except KeyError:
 load_dotenv('config.env')
 
 AUTHORIZED_CHATS = set()
+
+if os.path.exists('authorized_chats.txt'):
+    with open('authorized_chats.txt', 'r+') as f:
+        lines = f.readlines()
+        for line in lines:
+            AUTHORIZED_CHATS.add(int(line.split()[0]))
+
 try:
-    auths = get_config('AUTHORIZED_CHATS')
-    auths = auths.split(" ")
-    for chats in auths:
-        AUTHORIZED_CHATS.add(int(chats))
+    users = get_config('AUTHORIZED_CHATS')
+    users = users.split(" ")
+    for user in users:
+        AUTHORIZED_CHATS.add(int(user))
 except:
     pass
 
@@ -70,6 +77,13 @@ try:
 except:
     LOGGER.error("Failed to create token.json file")
     exit(1)
+
+try:
+    DATABASE_URL = get_config('DATABASE_URL')
+    if len(DATABASE_URL) == 0:
+        raise KeyError
+except KeyError:
+    DATABASE_URL = None
 
 try:
     IS_TEAM_DRIVE = get_config('IS_TEAM_DRIVE')

@@ -33,15 +33,19 @@ For <i>file</i> results only:
 
 /{BotCommands.ListCommand} [query]: Search data on Drives
 
-/{BotCommands.CloneCommand} [drive_url]: Copy data to Drive
+/{BotCommands.CloneCommand} [drive_url][gdtot_url]: Copy data to Drive
 
-/{BotCommands.CountCommand} [drive_url]: Count data of Drive
+/{BotCommands.CountCommand} [drive_url][gdtot_url]: Count data of Drive
 
-/{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only Owner)
+/{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only owner)
 
-/{BotCommands.AuthUsersCommand}: View authorized chats (Only Owner)
+/{BotCommands.AuthorizeCommand}: Authorize an user or a chat for using the bot (Only owner)
 
-/{BotCommands.ShellCommand} [cmd]: Execute bash commands (Only Owner)
+/{BotCommands.UnauthorizeCommand}: Unauthorize an user or a chat for using the bot (Only owner)
+
+/{BotCommands.UsersCommand}: View authorized chats (Only owner)
+
+/{BotCommands.ShellCommand} [cmd]: Execute bash commands (Only owner)
 
 /{BotCommands.LogCommand}: Get the log file (Only owner)
 

@@ -1,16 +1,22 @@
 <p align="center">
-
-<img width="200" src="https://cdn.dribbble.com/users/1501052/screenshots/5468049/searching_tickets.gif" alt="SearchX">
-
-</p> 
+    <a href="https://github.com/l3v11/SearchX">
+        <img width="200" src="https://cdn.dribbble.com/users/1501052/screenshots/5468049/searching_tickets.gif" alt="SearchX">
+    </a>
+</p>
 
 
 <p align="center">
 
-## This is a Telegram Bot written in Python for searching data on Google Drive. Supports multiple Shared Drives (TDs). Able to clone data from drive.
+## SearchX
+
+> A simple Telegram Bot for searching data on Google Drive. Able to clone data from Drive or GDToT links. Supports MongoDB for storing authorized users record.
 
 </p>
 
+
+### [Features](https://github.com/l3v11/SearchX/wiki/Features)
+
+List of features supported by the bot
 
 ### [Manual](https://github.com/l3v11/SearchX/wiki)
 
