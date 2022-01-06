@@ -73,7 +73,7 @@ class GoogleDriveHelper:
         parsed = urlparse.urlparse(link)
         return parse_qs(parsed.query)['id'][0]
 
-    def deletefile(self, link: str):
+    def deleteFile(self, link: str):
         try:
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
@@ -104,8 +104,6 @@ class GoogleDriveHelper:
         LOGGER.info(f"Using SA file: {SERVICE_ACCOUNT_INDEX}.json")
         self.__service = self.authorize()
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
-           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def __set_permission(self, drive_id):
         permissions = {
             'role': 'reader',
@@ -115,6 +113,28 @@ class GoogleDriveHelper:
         }
         return self.__service.permissions().create(supportsTeamDrives=True, fileId=drive_id,
                                                    body=permissions).execute()
+
+    def setPerm(self, link: str):
+        try:
+            file_id = self.getIdFromUrl(link)
+        except (KeyError, IndexError):
+            msg = "Drive ID not found"
+            LOGGER.error(f"{msg}")
+            return msg
+        msg = ''
+        try:
+            res = self.__set_permission(file_id)
+            msg = "Successfully set permissions"
+        except HttpError as err:
+            if "File not found" in str(err):
+                msg = "No such file exists"
+            elif "insufficientFilePermissions" in str(err):
+                msg = "Insufficient file permissions"
+            else:
+                msg = str(err)
+            LOGGER.error(f"{msg}")
+        finally:
+            return msg
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
@@ -198,7 +218,7 @@ class GoogleDriveHelper:
                     typ = 'File' 
                 msg += f'<b>Filename: </b><code>{file.get("name")}</code>'
                 try:
-                    msg += f'\n<b>Size: </b>{get_readable_file_size(int(meta.get("size")))}'
+                    msg += f'\n<b>Size: </b>{get_readable_file_size(int(meta.get("size", 0)))}'
                     msg += f'\n<b>Type: </b>{typ}'
                     msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">Drive Link</a>'
                 except TypeError:
@@ -230,7 +250,7 @@ class GoogleDriveHelper:
             else:
                 try:
                     self.total_files += 1
-                    self.transferred_size += int(file.get('size'))
+                    self.transferred_size += int(file.get('size', 0))
                 except TypeError:
                     pass
                 try:
@@ -435,7 +455,7 @@ class GoogleDriveHelper:
                             url = f'{INDEX_URL[index]}/{url_path}/'
                             msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     else:
-                        msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size')))})" \
+                        msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size', 0)))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
                                f"&export=download'>Drive Link</a></b>"
                         if INDEX_URL[index] is not None:

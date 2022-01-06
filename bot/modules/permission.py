@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 
 @new_thread
-def deleteNode(update, context):
+def permissionNode(update, context):
     LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     args = update.message.text.split(" ", maxsplit=1)
     if len(args) > 1:
@@ -16,16 +16,16 @@ def deleteNode(update, context):
     else:
         link = ''
     if is_gdrive_link(link):
-        msg = sendMessage(f"<b>Deleting:</b> <code>{link}</code>", context.bot, update)
-        LOGGER.info(f"Deleting: {link}")
+        msg = sendMessage(f"<b>Setting permission:</b> <code>{link}</code>", context.bot, update)
+        LOGGER.info(f"Setting permission: {link}")
         gd = GoogleDriveHelper()
-        result = gd.deleteFile(link)
+        result = gd.setPerm(link)
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update)
     else:
         sendMessage("Send a drive link along with command", context.bot, update)
-        LOGGER.info("Deleting: None")
+        LOGGER.info("Setting permission: None")
 
-delete_handler = CommandHandler(BotCommands.DeleteCommand, deleteNode,
+permission_handler = CommandHandler(BotCommands.PermissionCommand, permissionNode,
                                 filters=CustomFilters.owner_filter, run_async=True)
-dispatcher.add_handler(delete_handler)
+dispatcher.add_handler(permission_handler)

@@ -4,6 +4,7 @@ class _BotCommands:
         self.ListCommand = 'search'
         self.CloneCommand = 'clone'
         self.CountCommand = 'count'
+        self.PermissionCommand = 'perm'
         self.DeleteCommand = 'del'
         self.AuthorizeCommand = 'authorize'
         self.UnauthorizeCommand = 'unauthorize'
