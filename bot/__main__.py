@@ -37,6 +37,8 @@ For <i>file</i> results only:
 
 /{BotCommands.CountCommand} [drive_url][gdtot_url]: Count data of Drive
 
+/{BotCommands.PermissionCommand} [drive_url]: Set permissions for data of Drive (Only owner)
+
 /{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only owner)
 
 /{BotCommands.AuthorizeCommand}: Authorize an user or a chat for using the bot (Only owner)

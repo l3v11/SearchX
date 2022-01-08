@@ -46,6 +46,7 @@ class GoogleDriveHelper:
         self.total_files = 0
         self.total_folders = 0
         self.transferred_size = 0
+        self.alt_auth = False
 
     def authorize(self):
         # Get credentials
@@ -57,10 +58,23 @@ class GoogleDriveHelper:
                 if credentials and credentials.expired and credentials.refresh_token:
                     credentials.refresh(Request())
         else:
-            LOGGER.info(f"Using SA file: {SERVICE_ACCOUNT_INDEX}.json")
+            LOGGER.info(f"Authorizing with {SERVICE_ACCOUNT_INDEX}.json file")
             credentials = service_account.Credentials.from_service_account_file(
                 f'accounts/{SERVICE_ACCOUNT_INDEX}.json', scopes=self.__OAUTH_SCOPE)
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+
+    def alt_authorize(self):
+        credentials = None
+        if USE_SERVICE_ACCOUNTS and not self.alt_auth:
+            self.alt_auth = True
+            if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
+                LOGGER.info("Authorizing with token.json file")
+                credentials = Credentials.from_authorized_user_file(self.__G_DRIVE_TOKEN_FILE, self.__OAUTH_SCOPE)
+                if credentials is None or not credentials.valid:
+                    if credentials and credentials.expired and credentials.refresh_token:
+                        credentials.refresh(Request())
+                return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+        return None
 
     @staticmethod
     def getIdFromUrl(link: str):
@@ -89,6 +103,10 @@ class GoogleDriveHelper:
                 msg = "No such file exists"
             elif "insufficientFilePermissions" in str(err):
                 msg = "Insufficient file permissions"
+                token_service = self.alt_authorize()
+                if token_service is not None:
+                    self.__service = token_service
+                    return self.deleteFile(link)
             else:
                 msg = str(err)
             LOGGER.error(f"{msg}")
@@ -101,7 +119,7 @@ class GoogleDriveHelper:
         if SERVICE_ACCOUNT_INDEX == service_account_count - 1:
             SERVICE_ACCOUNT_INDEX = 0
         SERVICE_ACCOUNT_INDEX += 1
-        LOGGER.info(f"Using SA file: {SERVICE_ACCOUNT_INDEX}.json")
+        LOGGER.info(f"Authorizing with {SERVICE_ACCOUNT_INDEX}.json file")
         self.__service = self.authorize()
 
     def __set_permission(self, drive_id):
@@ -130,6 +148,10 @@ class GoogleDriveHelper:
                 msg = "No such file exists"
             elif "insufficientFilePermissions" in str(err):
                 msg = "Insufficient file permissions"
+                token_service = self.alt_authorize()
+                if token_service is not None:
+                    self.__service = token_service
+                    return self.setPerm(link)
             else:
                 msg = str(err)
             LOGGER.error(f"{msg}")
@@ -232,7 +254,17 @@ class GoogleDriveHelper:
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)
-            return err
+            if "User rate limit exceeded" in str(err):
+                msg = "User rate limit exceeded"
+            elif "File not found" in str(err):
+                token_service = self.alt_authorize()
+                if token_service is not None:
+                    self.__service = token_service
+                    return self.clone(link)
+                msg = "No such file exists"
+            else:
+                msg = str(err)
+            LOGGER.error(f"{msg}")
         return msg
 
     def cloneFolder(self, name, local_path, folder_id, parent_id):
@@ -314,7 +346,15 @@ class GoogleDriveHelper:
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)
-            return err
+            if "File not found" in str(err):
+                token_service = self.alt_authorize()
+                if token_service is not None:
+                    self.__service = token_service
+                    return self.count(link)
+                msg = "No such file exists"
+            else:
+                msg = str(err)
+            LOGGER.error(f"{msg}")
         return msg
 
     def gDrive_file(self, filee):
@@ -431,6 +471,10 @@ class GoogleDriveHelper:
         msg = ''
         index = -1
         content_count = 0
+        if len(DRIVE_ID) > 1:
+            token_service = self.alt_authorize()
+            if token_service is not None:
+                self.__service = token_service
         reached_max_limit = False
         add_title_msg = True
         for parent_id in DRIVE_ID:

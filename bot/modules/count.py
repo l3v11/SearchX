@@ -37,7 +37,7 @@ def countNode(update, context):
         sendMessage(result, context.bot, update)
         if gdtot_link:
             LOGGER.info(f"Deleting: {link}")
-            gd.deletefile(link)
+            gd.deleteFile(link)
     else:
         sendMessage("Send a drive or gdtot link along with command", context.bot, update)
         LOGGER.info("Counting: None")
