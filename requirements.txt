@@ -1,7 +1,7 @@
-beautifulsoup4
 dnspython
 google-api-python-client
 google-auth-oauthlib
+lxml
 pymongo
 python-dotenv
 python-magic

@@ -1,2 +1,2 @@
-class GDToTException(Exception):
+class DDLException(Exception):
     pass

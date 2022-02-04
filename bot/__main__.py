@@ -33,11 +33,11 @@ For <i>file</i> results only:
 
 /{BotCommands.ListCommand} [query]: Search data on Drives
 
-/{BotCommands.CloneCommand} [drive_url][gdtot_url]: Copy data to Drive
+/{BotCommands.CloneCommand} [url]: Copy data from drive/appdrive/gdtot to Drive
 
-/{BotCommands.CountCommand} [drive_url][gdtot_url]: Count data of Drive
+/{BotCommands.CountCommand} [drive_url]: Count data of Drive
 
-/{BotCommands.PermissionCommand} [drive_url]: Set permissions for data of Drive (Only owner)
+/{BotCommands.PermissionCommand} [drive_url]: Set data permission to 'Anyone with the link' (Only owner)
 
 /{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only owner)
 

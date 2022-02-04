@@ -104,13 +104,20 @@ except KeyError:
     USE_SERVICE_ACCOUNTS = False
 
 try:
-    PHPSESSID = get_config('PHPSESSID')
-    CRYPT = get_config('CRYPT')
-    if len(PHPSESSID) == 0 or len(CRYPT) == 0:
+    APPDRIVE_EMAIL = get_config('APPDRIVE_EMAIL')
+    APPDRIVE_PASS = get_config('APPDRIVE_PASS')
+    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
         raise KeyError
 except KeyError:
-    PHPSESSID = None
-    CRYPT = None
+    APPDRIVE_EMAIL = None
+    APPDRIVE_PASS = None
+
+try:
+    GDTOT_CRYPT = get_config('GDTOT_CRYPT')
+    if len(GDTOT_CRYPT) == 0:
+        raise KeyError
+except KeyError:
+    GDTOT_CRYPT = None
 
 try:
     DRIVE_INDEX_URL = get_config('DRIVE_INDEX_URL')
