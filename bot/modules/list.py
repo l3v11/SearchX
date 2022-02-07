@@ -24,6 +24,7 @@ def list_drive(update, context):
         LOGGER.exception(e)
     editMessage(msg, reply, button)
 
+
 list_handler = CommandHandler(BotCommands.ListCommand, list_drive,
                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 dispatcher.add_handler(list_handler)

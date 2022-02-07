@@ -10,9 +10,10 @@ from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
 from bot.helper.ext_utils.exceptions import DDLException
 
 account = {
-    'email': APPDRIVE_EMAIL, 
+    'email': APPDRIVE_EMAIL,
     'passwd': APPDRIVE_PASS
 }
+
 
 def account_login(client, url, email, password):
     data = {
@@ -20,6 +21,7 @@ def account_login(client, url, email, password):
         'password': password
     }
     client.post(f'https://{urlparse(url).netloc}/login', data=data)
+
 
 def gen_payload(data, boundary=f'{"-"*6}_'):
     data_string = ''
@@ -29,6 +31,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
     data_string += f'{boundary}--\r\n'
     return data_string
 
+
 def parse_info(data):
     info = re.findall(r'>(.*?)<\/li>', data)
     info_parsed = {}
@@ -36,6 +39,7 @@ def parse_info(data):
         kv = [s.strip() for s in item.split(':', maxsplit=1)]
         info_parsed[kv[0].lower()] = kv[1]
     return info_parsed
+
 
 def appdrive(url: str) -> str:
     client = requests.Session()
@@ -79,6 +83,7 @@ def appdrive(url: str) -> str:
     else:
         raise DDLException(f"{info_parsed['error_message']}")
 
+
 def gdtot(url: str) -> str:
     client = requests.Session()
     client.cookies.update({'crypt': GDTOT_CRYPT})
@@ -87,7 +92,6 @@ def gdtot(url: str) -> str:
     matches = re.findall(r'gd=(.*?)&', res.text)
     try:
         decoded_id = base64.b64decode(str(matches[0])).decode('utf-8')
-    except:
+    except Exception:
         raise DDLException("Unable to parse link")
-    gdrive_url = f'https://drive.google.com/open?id={decoded_id}'
-    return gdrive_url
+    return f'https://drive.google.com/open?id={decoded_id}'
