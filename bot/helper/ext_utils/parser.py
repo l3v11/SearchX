@@ -29,7 +29,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
     return data_string
 
 def appdrive(url: str) -> str:
-    if cookie_checker(appdrive=True) is None:
+    if (APPDRIVE_EMAIL or APPDRIVE_PASS) is None:
         raise DDLException("APPDRIVE_EMAIL and APPDRIVE_PASS env vars not provided")
     client = requests.Session()
     client.headers.update({
@@ -76,7 +76,7 @@ def appdrive(url: str) -> str:
         raise DDLException(f"{info['message']}")
 
 def gdtot(url: str) -> str:
-    if cookie_checker(gdtot=True) is None:
+    if GDTOT_CRYPT is None:
         raise DDLException("GDTOT_CRYPT env var not provided")
     client = requests.Session()
     client.cookies.update({'crypt': GDTOT_CRYPT})
