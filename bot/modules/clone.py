@@ -2,7 +2,7 @@ from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_gdtot_link, is_appdrive_link
+from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_appdrive_link, is_gdtot_link
 from bot.helper.ext_utils.parser import appdrive, gdtot
 from bot.helper.ext_utils.exceptions import DDLException
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage
@@ -17,21 +17,22 @@ def cloneNode(update, context):
         link = args[1]
     else:
         link = ''
-    try:
-        msg = sendMessage(f"<b>Processing:</b> <code>{link}</code>", context.bot, update)
-        LOGGER.info(f"Processing: {link}")
-        is_gdtot = is_gdtot_link(link)
-        if is_gdtot:
-            link = gdtot(link)
-        is_appdrive = is_appdrive_link(link)
-        if is_appdrive:
-            apdict = appdrive(link)
-            link = apdict.get('gdrive_link')
-        deleteMessage(context.bot, msg)
-    except DDLException as e:
-        deleteMessage(context.bot, msg)
-        LOGGER.error(e)
-        return sendMessage(str(e), context.bot, update)
+    is_appdrive = is_appdrive_link(link)
+    is_gdtot = is_gdtot_link(link)
+    if (is_appdrive or is_gdtot):
+        try:
+            msg = sendMessage(f"<b>Processing:</b> <code>{link}</code>", context.bot, update)
+            LOGGER.info(f"Processing: {link}")
+            if is_appdrive:
+                appdict = appdrive(link)
+                link = appdict.get('gdrive_link')
+            if is_gdtot:
+                link = gdtot(link)
+            deleteMessage(context.bot, msg)
+        except DDLException as e:
+            deleteMessage(context.bot, msg)
+            LOGGER.error(e)
+            return sendMessage(str(e), context.bot, update)
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update)
         LOGGER.info(f"Cloning: {link}")
@@ -42,12 +43,12 @@ def cloneNode(update, context):
         if is_gdtot:
             LOGGER.info(f"Deleting: {link}")
             gd.deleteFile(link)
-        elif is_appdrive:
-            if apdict.get('link_type') == 'login':
+        if is_appdrive:
+            if appdict.get('link_type') == 'login':
                 LOGGER.info(f"Deleting: {link}")
                 gd.deleteFile(link)
     else:
-        sendMessage("Send a drive or gdtot link along with command", context.bot, update)
+        sendMessage("<b>Send a Drive / AppDrive / DriveApp / GDToT link along with command</b>", context.bot, update)
         LOGGER.info("Cloning: None")
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,

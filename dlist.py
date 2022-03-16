@@ -5,8 +5,8 @@ print("\n" \
       "Instructions\n" \
       "------------\n" \
       "Drive Name -> Choose a name for the drive\n" \
-      "Drive ID   -> ID of the drive (Use 'root' for main drive)\n" \
-      "Index URL  -> Index link for the drive (Optional)")
+      "Drive ID   -> ID of the drive (Use 'root' for main drive)\n")
+
 msg = ''
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
@@ -31,18 +31,12 @@ while count <= num:
           f"----------")
     name = input("Drive Name : ")
     id = input("Drive ID   : ")
-    index = input("Index URL  : ")
     if not name or not id:
         print("\nERROR: Drive Name and/or Drive ID empty")
         exit(1)
     name = name.replace(" ", "_")
-    if index:
-        if index[-1] == "/":
-            index = index[:-1]
-    else:
-        index = ''
     count += 1
-    msg += f"{name} {id} {index}\n"
+    msg += f"{name} {id}\n"
 with open('drive_list', 'w') as f:
     f.truncate(0)
     f.write(msg)

@@ -1,3 +1,5 @@
+import time
+
 from telegram.ext import CommandHandler
 
 from bot import AUTHORIZED_CHATS, dispatcher, updater
@@ -9,13 +11,19 @@ from bot.helper.telegram_helper.message_utils import *
 def start(update, context):
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         if update.message.chat.type == "private":
-            sendMessage(f"Access granted", context.bot, update)
+            sendMessage("<b>Access granted</b>", context.bot, update)
         else:
-            sendMessage(f"I'm alive :)", context.bot, update)
+            sendMessage("<b>I'm alive :)</b>", context.bot, update)
         LOGGER.info('Granted: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     else:
-        sendMessage(f"Access denied", context.bot, update)
+        sendMessage("<b>Access denied</b>", context.bot, update)
         LOGGER.info('Denied: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
+
+def ping(update, context):
+    start_time = int(round(time.time() * 1000))
+    reply = sendMessage("<b>Pong!</b>", context.bot, update)
+    end_time = int(round(time.time() * 1000))
+    editMessage(f'<code>{end_time - start_time}ms</code>', reply)
 
 def bot_help(update, context):
     help_string = f'''
@@ -33,7 +41,7 @@ For <i>file</i> results only:
 
 /{BotCommands.ListCommand} [query]: Search data on Drives
 
-/{BotCommands.CloneCommand} [url]: Copy data from drive/appdrive/gdtot to Drive
+/{BotCommands.CloneCommand} [url]: Copy data from Drive / AppDrive / DriveApp / GDToT to Drive
 
 /{BotCommands.CountCommand} [drive_url]: Count data of Drive
 
@@ -49,6 +57,8 @@ For <i>file</i> results only:
 
 /{BotCommands.ShellCommand} [cmd]: Execute bash commands (Only owner)
 
+/{BotCommands.PingCommand}: Ping the bot
+
 /{BotCommands.LogCommand}: Get the log file (Only owner)
 
 /{BotCommands.HelpCommand}: Get this message
@@ -56,19 +66,20 @@ For <i>file</i> results only:
     sendMessage(help_string, context.bot, update)
 
 def log(update, context):
-    send_log_file(context.bot, update)
+    sendLogFile(context.bot, update)
 
 def main():
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
+    ping_handler = CommandHandler(BotCommands.PingCommand, ping,
+                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
                                  filters=CustomFilters.owner_filter, run_async=True)
-
     dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(help_handler)
     dispatcher.add_handler(log_handler)
-
     updater.start_polling()
     LOGGER.info("Bot started")
     updater.idle()

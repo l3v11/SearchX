@@ -23,7 +23,7 @@ def countNode(update, context):
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update)
     else:
-        sendMessage("Send a drive link along with command", context.bot, update)
+        sendMessage("<b>Send a Drive link along with command</b>", context.bot, update)
         LOGGER.info("Counting: None")
 
 count_handler = CommandHandler(BotCommands.CountCommand, countNode,

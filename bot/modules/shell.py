@@ -13,7 +13,7 @@ def shell(update, context):
     cmd = message.text.split(' ', 1)
     if len(cmd) == 1:
         LOGGER.info("Shell: None")
-        return sendMessage('Send a command to execute', context.bot, update)
+        return sendMessage('<b>Send a command to execute</b>', context.bot, update)
     cmd = cmd[1]
     process = subprocess.run(cmd, capture_output=True, shell=True)
     reply = ''
@@ -37,7 +37,7 @@ def shell(update, context):
     elif len(reply) != 0:
         sendMessage(reply, context.bot, update)
     else:
-        sendMessage('No Reply', context.bot, update)
+        sendMessage('Executed', context.bot, update)
 
 shell_handler = CommandHandler(BotCommands.ShellCommand, shell,
                                filters=CustomFilters.owner_filter, run_async=True)

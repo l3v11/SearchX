@@ -18,12 +18,12 @@ def get_readable_file_size(size_in_bytes) -> str:
 def is_gdrive_link(url: str):
     return "drive.google.com" in url
 
-def is_gdtot_link(url: str):
-    url = re.match(r'https?://(?:\S*\.)?(?:gdtot)\.\S+', url)
+def is_appdrive_link(url: str):
+    url = re.match(r'https?://(appdrive|driveapp)\.in/\S+', url)
     return bool(url)
 
-def is_appdrive_link(url: str):
-    url = re.match(r'https?://(?:\S*\.)?(?:appdrive|driveapp)\.in/\S+', url)
+def is_gdtot_link(url: str):
+    url = re.match(r'https?://.+\.gdtot\.\S+', url)
     return bool(url)
 
 def new_thread(fn):

@@ -3,12 +3,15 @@ import os
 import json
 import re
 import requests
+import time
 
 import urllib.parse as urlparse
 from urllib.parse import parse_qs
 from random import randrange
+from timeit import default_timer as timer
 
 from telegram import InlineKeyboardMarkup
+from telegraph.exceptions import RetryAfterError
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -17,8 +20,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from tenacity import *
 
-from bot import LOGGER, DRIVE_NAME, DRIVE_ID, INDEX_URL, telegra_ph, \
-    IS_TEAM_DRIVE, parent_id, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
+from bot import LOGGER, DRIVE_NAME, DRIVE_ID, IS_TEAM_DRIVE, \
+    parent_id, telegraph, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.telegram_helper import button_builder
 
@@ -27,7 +30,7 @@ logging.getLogger('googleapiclient.discovery').setLevel(logging.ERROR)
 if USE_SERVICE_ACCOUNTS:
     SERVICE_ACCOUNT_INDEX = randrange(len(os.listdir("accounts")))
 
-telegraph_limit = 95
+telegraph_limit = 60
 
 class GoogleDriveHelper:
     def __init__(self, name=None, listener=None):
@@ -40,6 +43,7 @@ class GoogleDriveHelper:
         self.__G_DRIVE_BASE_DOWNLOAD_URL = "https://drive.google.com/uc?id={}&export=download"
         self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL = "https://drive.google.com/drive/folders/{}"
         self.__service = self.authorize()
+        self.batch_dict = {}
         self.telegraph_content = []
         self.path = []
         self.total_bytes = 0
@@ -158,7 +162,7 @@ class GoogleDriveHelper:
         finally:
             return msg
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def copyFile(self, file_id, dest_id):
         body = {
@@ -180,13 +184,13 @@ class GoogleDriveHelper:
                 else:
                     raise err
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def getFileMetadata(self, file_id):
         return self.__service.files().get(supportsAllDrives=True, fileId=file_id,
-                                              fields="name, id, mimeType, size").execute()
+                                          fields="name, id, mimeType, size").execute()
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def getFilesByFolderId(self, folder_id):
         page_token = None
@@ -297,7 +301,7 @@ class GoogleDriveHelper:
                     LOGGER.error(err)
         return new_id
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(5),
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
     def create_directory(self, directory_name, parent_id):
         file_metadata = {
@@ -380,158 +384,157 @@ class GoogleDriveHelper:
                 self.total_files += 1
                 self.gDrive_file(filee)
 
-    def get_recursive_list(self, file, root_id="root"):
-        return_list = []
-        if not root_id:
-            root_id = file.get('teamDriveId')
-        if root_id == "root":
-            root_id = self.__service.files().get(fileId='root', fields="id").execute().get('id')
-        x = file.get("name")
-        y = file.get("id")
-        while y != root_id:
-            return_list.append(x)
-            file = self.__service.files().get(
-                fileId=file.get("parents")[0],
-                supportsAllDrives=True,
-                fields='id, name, parents'
-            ).execute()
-            x = file.get("name")
-            y = file.get("id")
-        return_list.reverse()
-        return return_list
-
     def escapes(self, str_val):
         chars = ['\\', "'", '"', r'\a', r'\b', r'\f', r'\n', r'\r', r'\t']
         for char in chars:
             str_val = str_val.replace(char, '\\' + char)
         return str_val
 
-    def drive_query_backup(self, parent_id, file_name):
-        file_name = self.escapes(str(file_name))
-        query = f"'{parent_id}' in parents and (name contains '{file_name}')"
-        response = self.__service.files().list(supportsTeamDrives=True,
-                                               includeTeamDriveItems=True,
-                                               q=query,
-                                               spaces='drive',
-                                               pageSize=1000,
-                                               fields='files(id, name, mimeType, size, parents)',
-                                               orderBy='folder, modifiedTime desc').execute()["files"]
-        return response
+    def receive_callback(self, request_id, response, exception):
+        # request_id = order number of request = shared drive index (1 based)
+        if exception:
+            LOGGER.exception(f"{exception}")
+        else: 
+            if response['files']:
+                self.batch_dict[request_id] = response
 
-    def drive_query(self, parent_id, search_type, file_name):
-        query = ""
+    def drive_query(self, DRIVE_ID, search_type, file_name):
+        batch = self.__service.new_batch_http_request(self.receive_callback)
+        query = f"name contains '{file_name}' and "
         if search_type is not None:
             if search_type == '-d':
                 query += "mimeType = 'application/vnd.google-apps.folder' and "
             elif search_type == '-f':
                 query += "mimeType != 'application/vnd.google-apps.folder' and "
-        var = re.split('[ ._,\\[\\]-]+', file_name)
-        for text in var:
-            if text != '':
-                query += f"name contains '{text}' and "
         query += "trashed=false"
-        response = []
         try:
-            if parent_id != "root":
-                response = self.__service.files().list(supportsTeamDrives=True,
-                                                       includeTeamDriveItems=True,
-                                                       teamDriveId=parent_id,
-                                                       q=query,
-                                                       corpora='drive',
-                                                       spaces='drive',
-                                                       pageSize=1000,
-                                                       fields='files(id, name, mimeType, size, teamDriveId, parents)',
-                                                       orderBy='folder, modifiedTime desc').execute()["files"]
-            else:
-                response = self.__service.files().list(q=query + " and 'me' in owners",
-                                                       pageSize=1000,
-                                                       spaces='drive',
-                                                       fields='files(id, name, mimeType, size, parents)',
-                                                       orderBy='folder, modifiedTime desc').execute()["files"]
+            for parent_id in DRIVE_ID:
+                if parent_id != "root":
+                    batch.add(
+                        self.__service.files().list(
+                            supportsTeamDrives=True,
+                            includeTeamDriveItems=True,
+                            teamDriveId=parent_id,
+                            q=query,
+                            corpora='drive',
+                            spaces='drive',
+                            pageSize=1000,
+                            fields='files(id, name, mimeType, size, teamDriveId, parents)',
+                            orderBy='folder, modifiedTime desc'))
+                else:
+                    batch.add(
+                        self.__service.files().list(
+                            q=query + " and 'me' in owners",
+                            pageSize=1000,
+                            spaces='drive',
+                            fields='files(id, name, mimeType, size, parents)',
+                            orderBy='folder, modifiedTime desc'))
+            batch.execute()
         except Exception as e:
-            LOGGER.exception(f"Failed to call the drive api")
+            LOGGER.exception("Failed to call the drive api")
             LOGGER.exception(e)
-        if len(response) <= 0:
-            response = self.drive_query_backup(parent_id, file_name)
-        return response
 
     def drive_list(self, file_name):
         file_name = self.escapes(file_name)
         search_type = None
         if re.search("^-d ", file_name, re.IGNORECASE):
             search_type = '-d'
-            file_name = file_name[2: len(file_name)]
+            file_name = file_name[3: len(file_name)]
         elif re.search("^-f ", file_name, re.IGNORECASE):
             search_type = '-f'
-            file_name = file_name[2: len(file_name)]
-        if len(file_name) > 2:
-            remove_list = ['A', 'a', 'X', 'x']
-            if file_name[1] == ' ' and file_name[0] in remove_list:
-                file_name = file_name[2: len(file_name)]
+            file_name = file_name[3: len(file_name)]
         msg = ''
-        index = -1
+        response_count = 0
         content_count = 0
-        if len(DRIVE_ID) > 1:
-            token_service = self.alt_authorize()
-            if token_service is not None:
-                self.__service = token_service
-        reached_max_limit = False
+        token_service = self.alt_authorize()
+        if token_service is not None:
+            self.__service = token_service
+        start = timer()
+        response = self.drive_query(DRIVE_ID, search_type, file_name)
+        end = timer()
+        time_taken = round(end-start, 2)
+        response_dict = self.batch_dict
         add_title_msg = True
-        for parent_id in DRIVE_ID:
-            add_drive_title = True
-            response = self.drive_query(parent_id, search_type, file_name)
-            index += 1
-            if response:
-                for file in response:
-                    if add_title_msg:
-                        msg = f'<h4>Query: {file_name}</h4><br>'
-                        add_title_msg = False
-                    if add_drive_title:
-                        msg += f"╾────────────╼<br><b>{DRIVE_NAME[index]}</b><br>╾────────────╼<br>"
-                        add_drive_title = False
-                    # Detect whether current entity is a folder or file
+        if response_dict:
+            for files in response_dict:
+                index = int(files) - 1
+                if add_title_msg:
+                    msg = f'<h4>Query: {file_name}</h4><br>'
+                    add_title_msg = False
+                msg += f"╾────────────╼<br><b>{DRIVE_NAME[index]}</b><br>╾────────────╼<br>"
+                # Detect whether current entity is a folder or file
+                for file in response_dict[files]["files"]:
                     if file.get('mimeType') == "application/vnd.google-apps.folder":
                         msg += f"🗂️<code>{file.get('name')}</code> <b>(folder)</b><br>" \
                                f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive Link</a></b>"
-                        if INDEX_URL[index] is not None:
-                            url_path = "/".join(
-                                [requests.utils.quote(n, safe='') for n in self.get_recursive_list(file, parent_id)])
-                            url = f'{INDEX_URL[index]}/{url_path}/'
-                            msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     else:
                         msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size', 0)))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
                                f"&export=download'>Drive Link</a></b>"
-                        if INDEX_URL[index] is not None:
-                            url_path = "/".join(
-                                [requests.utils.quote(n, safe='') for n in self.get_recursive_list(file, parent_id)])
-                            url = f'{INDEX_URL[index]}/{url_path}'
-                            msg += f'<b> | <a href="{url}">Index Link</a></b>'
                     msg += '<br><br>'
                     content_count += 1
-                    if content_count >= telegraph_limit:
-                        reached_max_limit = True
-                        break
+                    response_count += 1
+                    if content_count == telegraph_limit:
+                        self.telegraph_content.append(msg)
+                        msg = ""
+                        content_count = 0
 
         if msg != '':
             self.telegraph_content.append(msg)
 
-        if len(self.telegraph_content) == 0:
-            return "Found nothing", None
+        total_pages = len(self.telegraph_content)
+        if total_pages == 0:
+            return "<b>Found nothing :(</b>", None
 
-        for content in self.telegraph_content:
-            self.path.append(
-                telegra_ph.create_page(title='SearchX',
-                                          author_name='XXX',
-                                          author_url='https://github.com/l3v11',
-                                          html_content=content)['path'])
+        acc_no = -1
+        page_per_acc = 2
+        for i in range(total_pages):
+            if i % page_per_acc == 0:
+                acc_no = (acc_no + 1) % len(telegraph)
 
-        msg = "Found " + ("too many" if content_count > telegraph_limit else f"{content_count}") + " results"
+            if i != 0:
+                # Add previous page link
+                self.telegraph_content[i] += f'<b><a href="https://telegra.ph/{self.path[i-1]}">Previous</a> | Page {i+1}/{total_pages}</b>'
+            else:
+                self.telegraph_content[i] += f'<b>Page {i+1}/{total_pages}</b>'
 
-        if reached_max_limit:
-            msg += "\n<i>(Top " + f"{telegraph_limit}" + " will appear)</i>"
+            try:
+                self.path.append(
+                    telegraph[acc_no].create_page(title='SearchX',
+                                                  author_name='Levi',
+                                                  author_url='https://t.me/l3v11BOT',
+                                                  html_content=self.telegraph_content[i])['path'])
+            except RetryAfterError as e:
+                LOGGER.info(f"Cooldown: {e.retry_after} seconds")
+                time.sleep(e.retry_after)
+                self.path.append(
+                    telegraph[acc_no].create_page(title='SearchX',
+                                                  author_name='Levi',
+                                                  author_url='https://t.me/l3v11BOT',
+                                                  html_content=self.telegraph_content[i])['path'])
+
+            if i != 0:
+                # Edit previous page to add next page link
+                self.telegraph_content[i-1] += f'<b> | <a href="https://telegra.ph/{self.path[i]}">Next</a></b>'
+                try:
+                    telegraph[(acc_no - 1) if i % page_per_acc == 0 else acc_no].edit_page(path = self.path[i-1],
+                                              title='SearchX',
+                                              author_name='Levi',
+                                              author_url='https://t.me/l3v11BOT',
+                                              html_content=self.telegraph_content[i-1])
+                except RetryAfterError as e:
+                    LOGGER.info(f"Cooldown: {e.retry_after} seconds")
+                    time.sleep(e.retry_after)
+                    telegraph[(acc_no - 1) if i % page_per_acc == 0 else acc_no].edit_page(path = self.path[i-1],
+                                              title='SearchX',
+                                              author_name='Levi',
+                                              author_url='https://t.me/l3v11BOT',
+                                              html_content=self.telegraph_content[i-1])
+
+        msg = f"<b>Found {response_count} results matching '{file_name}' in {len(DRIVE_ID)} Drives</b> " \
+              f"<b>(Time taken {time_taken}s)</b>"
 
         buttons = button_builder.ButtonMaker()
-        buttons.build_button("VIEW HERE", f"https://telegra.ph/{self.path[0]}")
+        buttons.build_button("VIEW RESULTS 🗂️", f"https://telegra.ph/{self.path[0]}")
 
         return msg, InlineKeyboardMarkup(buttons.build_menu(1))

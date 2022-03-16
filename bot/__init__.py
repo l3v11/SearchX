@@ -5,6 +5,7 @@ import string
 import requests
 import subprocess
 import socket
+import time
 
 import telegram.ext as tg
 
@@ -64,6 +65,11 @@ try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
     parent_id = get_config('DRIVE_FOLDER_ID')
+    TELEGRAPH_ACCS = None
+    try:
+        TELEGRAPH_ACCS = int(get_config('TELEGRAPH_ACCS'))
+    except ValueError:
+        TELEGRAPH_ACCS = 2
 except KeyError:
     LOGGER.error("One or more env variables are missing")
     exit(1)
@@ -140,6 +146,7 @@ try:
             LOGGER.error(f"Failed to load accounts.zip file [{res.status_code}]")
             raise KeyError
         subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
+        subprocess.run(["chmod", "-R", "777", "accounts"])
         os.remove("accounts.zip")
 except KeyError:
     pass
@@ -162,7 +169,6 @@ except KeyError:
 
 DRIVE_NAME = []
 DRIVE_ID = []
-INDEX_URL = []
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
@@ -171,24 +177,22 @@ if os.path.exists('drive_list'):
             temp = line.strip().split()
             DRIVE_NAME.append(temp[0].replace("_", " "))
             DRIVE_ID.append(temp[1])
-            try:
-                INDEX_URL.append(temp[2])
-            except IndexError:
-                INDEX_URL.append(None)
-
 if DRIVE_ID:
     pass
 else:
     LOGGER.error("drive_list file is missing")
     exit(1)
 
-# Generate Telegraph Token
-sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
-LOGGER.info("Generating TELEGRAPH_TOKEN using '" + sname + "' name")
-telegraph = Telegraph()
-telegraph.create_account(short_name=sname)
-telegraph_token = telegraph.get_access_token()
-telegra_ph = Telegraph(access_token=telegraph_token)
+telegraph = []
+
+for i in range(TELEGRAPH_ACCS):
+    sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
+    telegra_ph = Telegraph()
+    telegra_ph.create_account(short_name=sname)
+    telegraph_token = telegra_ph.get_access_token()
+    telegraph.append(Telegraph(access_token=telegraph_token))
+    time.sleep(0.5)
+LOGGER.info(f"Generated {TELEGRAPH_ACCS} telegraph tokens")
 
 updater = tg.Updater(token=BOT_TOKEN, use_context=True)
 bot = updater.bot
