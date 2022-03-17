@@ -62,6 +62,22 @@ except:
     pass
 
 try:
+    TOKEN_JSON_URL = get_config('TOKEN_JSON_URL')
+    if len(TOKEN_JSON_URL) == 0:
+        TOKEN_JSON_URL = None
+    else:
+        res = requests.get(TOKEN_JSON_URL)
+        if res.status_code == 200:
+            with open('token.json', 'wb+') as f:
+                f.write(res.content)
+                f.close()
+        else:
+            LOGGER.error(f"Failed to load token.json file [{res.status_code}]")
+            raise KeyError
+except KeyError:
+    pass
+
+try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
     parent_id = get_config('DRIVE_FOLDER_ID')
@@ -75,13 +91,11 @@ except KeyError:
     exit(1)
 
 try:
-    if len(get_config('DRIVE_TOKEN')) == 0 or str(get_config('DRIVE_TOKEN')).lower() == "empty":
-        LOGGER.error("DRIVE_TOKEN var is missing")
-        exit(1)
-    with open('token.json', 'wt') as f:
-        f.write(get_config('DRIVE_TOKEN').replace("\n",""))
+    if not os.path.exists('token.json'):
+        with open('token.json', 'wt') as f:
+            f.write(get_config('DRIVE_TOKEN').replace("\n", ""))
 except:
-    LOGGER.error("Failed to create token.json file")
+    LOGGER.error("token.json file is missing")
     exit(1)
 
 try:
