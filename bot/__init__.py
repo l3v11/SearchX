@@ -90,11 +90,7 @@ except KeyError:
     LOGGER.error("One or more env variables are missing")
     exit(1)
 
-try:
-    if not os.path.exists('token.json'):
-        with open('token.json', 'wt') as f:
-            f.write(get_config('DRIVE_TOKEN').replace("\n", ""))
-except:
+if not os.path.exists('token.json'):
     LOGGER.error("token.json file is missing")
     exit(1)
 

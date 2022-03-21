@@ -1,5 +1,6 @@
 import os
 import json
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -22,4 +23,4 @@ creds = credentials.to_json()
 with open(__G_DRIVE_TOKEN_FILE, 'w') as token:
     token.write(creds)
 
-print(f'\n\n{creds}\n\n')
+print("\nGenerated token.json file")

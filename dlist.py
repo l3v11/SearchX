@@ -24,6 +24,7 @@ if os.path.exists('drive_list'):
                 break
             else:
                 print("ERROR: Wrong input")
+
 num = int(input("\nTotal number of drives : "))
 count = 1
 while count <= num:
@@ -37,7 +38,9 @@ while count <= num:
     name = name.replace(" ", "_")
     count += 1
     msg += f"{name} {id}\n"
+
 with open('drive_list', 'w') as f:
     f.truncate(0)
     f.write(msg)
-print("\nSuccess")
+
+print("\nGenerated drive_list file")
