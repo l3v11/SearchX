@@ -23,4 +23,4 @@ creds = credentials.to_json()
 with open(__G_DRIVE_TOKEN_FILE, 'w') as token:
     token.write(creds)
 
-print("\nGenerated token.json file")
+print("\nGenerated \033[1;96mtoken.json\033[m file")
