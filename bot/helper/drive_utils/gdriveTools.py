@@ -164,7 +164,7 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))
-    def copyFile(self, file_id, dest_id):
+    def copyFile(self, file_id, dest_id, status):
         body = {
             'parents': [dest_id]
         }
@@ -177,7 +177,7 @@ class GoogleDriveHelper:
                 if reason == 'userRateLimitExceeded' or reason == 'dailyLimitExceeded':
                     if USE_SERVICE_ACCOUNTS:
                         self.switchServiceAccount()
-                        return self.copyFile(file_id, dest_id)
+                        return self.copyFile(file_id, dest_id, status)
                     else:
                         LOGGER.info(f"Warning: {reason}")
                         raise err
@@ -211,7 +211,7 @@ class GoogleDriveHelper:
                 break
         return files
 
-    def clone(self, link):
+    def clone(self, link, status):
         self.transferred_size = 0
         self.total_files = 0
         self.total_folders = 0
@@ -224,9 +224,11 @@ class GoogleDriveHelper:
         msg = ""
         try:
             meta = self.getFileMetadata(file_id)
+            status.set_source_folder(meta.get('name'), self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(meta.get('id')))
             if meta.get("mimeType") == self.__G_DRIVE_DIR_MIME_TYPE:
                 dir_id = self.create_directory(meta.get('name'), parent_id)
-                result = self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
+                self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id, status)
+                status.set_status(True)
                 msg += f'<b>Filename: </b><code>{meta.get("name")}</code>'
                 msg += f'\n<b>Size: </b>{get_readable_file_size(self.transferred_size)}'
                 msg += f"\n<b>Type: </b>Folder"
@@ -237,7 +239,7 @@ class GoogleDriveHelper:
                     url = requests.utils.requote_uri(f'{DRIVE_INDEX_URL}/{meta.get("name")}/')
                     msg += f' | <a href="{url}">Index Link</a>'
             else:
-                file = self.copyFile(meta.get('id'), parent_id)
+                file = self.copyFile(meta.get('id'), parent_id, status)
                 try:
                     typ = file.get('mimeType')
                 except:
@@ -271,10 +273,9 @@ class GoogleDriveHelper:
             LOGGER.error(f"{msg}")
         return msg
 
-    def cloneFolder(self, name, local_path, folder_id, parent_id):
+    def cloneFolder(self, name, local_path, folder_id, parent_id, status):
         LOGGER.info(f"Syncing: {local_path}")
         files = self.getFilesByFolderId(folder_id)
-        new_id = None
         if len(files) == 0:
             return parent_id
         for file in files:
@@ -282,24 +283,13 @@ class GoogleDriveHelper:
                 self.total_folders += 1
                 file_path = os.path.join(local_path, file.get('name'))
                 current_dir_id = self.create_directory(file.get('name'), parent_id)
-                new_id = self.cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
+                self.cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id, status)
             else:
-                try:
-                    self.total_files += 1
-                    self.transferred_size += int(file.get('size', 0))
-                except TypeError:
-                    pass
-                try:
-                    self.copyFile(file.get('id'), parent_id)
-                    new_id = parent_id
-                except Exception as e:
-                    if isinstance(e, RetryError):
-                        LOGGER.info(f"Total attempts: {e.last_attempt.attempt_number}")
-                        err = e.last_attempt.exception()
-                    else:
-                        err = e
-                    LOGGER.error(err)
-        return new_id
+                self.copyFile(file.get('id'), parent_id, status)
+                self.total_files += 1
+                self.transferred_size += int(file.get('size', 0))
+                status.set_name(file.get('name'))
+                status.add_size(int(file.get('size')))
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, logging.DEBUG))

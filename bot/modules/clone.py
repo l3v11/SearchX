@@ -1,11 +1,14 @@
+import time
+
 from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_appdrive_link, is_gdtot_link
-from bot.helper.ext_utils.parser import appdrive, gdtot
+from bot.helper.ext_utils.clone_status import CloneStatus
 from bot.helper.ext_utils.exceptions import DDLException
-from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage
+from bot.helper.ext_utils.parser import appdrive, gdtot
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 
@@ -36,9 +39,12 @@ def cloneNode(update, context):
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update)
         LOGGER.info(f"Cloning: {link}")
+        status_class = CloneStatus()
         gd = GoogleDriveHelper()
-        result = gd.clone(link)
+        sendCloneStatus(link, msg, status_class, context, update)
+        result = gd.clone(link, status_class)
         deleteMessage(context.bot, msg)
+        status_class.set_status(True)
         sendMessage(result, context.bot, update)
         if is_gdtot:
             LOGGER.info(f"Deleting: {link}")
@@ -50,6 +56,24 @@ def cloneNode(update, context):
     else:
         sendMessage("<b>Send a Drive / AppDrive / DriveApp / GDToT link along with command</b>", context.bot, update)
         LOGGER.info("Cloning: None")
+
+@new_thread
+def sendCloneStatus(link, msg, status, context, update):
+    old_statmsg = ''
+    while not status.done():
+        time.sleep(3)
+        try:
+            statmsg = f"<b>Cloning:</b> <a href='{status.source_folder_link}'>{status.source_folder_name}</a>\n━━━━━━━━━━━━━━\n<b>Current file:</b> <code>{status.get_name()}</code>\n<b>Transferred</b>: <code>{status.get_size()}</code>"
+            if not statmsg == old_statmsg:
+                editMessage(statmsg, msg)
+                old_statmsg = statmsg
+        except Exception as e:
+            LOGGER.error(str(e))
+            if str(e) == "Message to edit not found":
+                break
+            time.sleep(2)
+            continue
+    return
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
