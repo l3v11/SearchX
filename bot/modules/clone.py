@@ -63,12 +63,12 @@ def sendCloneStatus(link, msg, status, context, update):
     while not status.done():
         time.sleep(3)
         try:
-            statmsg = f"<b>Cloning:</b> <a href='{status.source_folder_link}'>{status.source_folder_name}</a>\n━━━━━━━━━━━━━━\n<b>Current file:</b> <code>{status.get_name()}</code>\n<b>Transferred</b>: <code>{status.get_size()}</code>"
+            statmsg = f"<b>Cloning:</b> <a href='{status.source_folder_link}'>{status.source_folder_name}</a>\n━━━━━━━━━━━━━━" \
+                      f"\n<b>Current file:</b> <code>{status.get_name()}</code>\n<b>Transferred</b>: <code>{status.get_size()}</code>"
             if not statmsg == old_statmsg:
                 editMessage(statmsg, msg)
                 old_statmsg = statmsg
         except Exception as e:
-            LOGGER.error(str(e))
             if str(e) == "Message to edit not found":
                 break
             time.sleep(2)

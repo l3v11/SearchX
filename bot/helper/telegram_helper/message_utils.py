@@ -19,8 +19,8 @@ def editMessage(text: str, message: Message, reply_markup=None):
                               reply_markup=reply_markup,
                               text=text, parse_mode='HTMl',
                               disable_web_page_preview=True)
-    except Exception as e:
-        LOGGER.error(str(e))
+    except Exception:
+        pass
 
 def deleteMessage(bot, message: Message):
     try:
