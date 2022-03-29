@@ -266,7 +266,7 @@ class GoogleDriveHelper:
                 token_service = self.alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-                    return self.clone(link)
+                    return self.clone(link, status)
                 msg = "No such file exists"
             else:
                 msg = str(err)
