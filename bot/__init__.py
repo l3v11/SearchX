@@ -179,6 +179,7 @@ except KeyError:
 
 DRIVE_NAME = []
 DRIVE_ID = []
+INDEX_URL = []
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
@@ -187,6 +188,11 @@ if os.path.exists('drive_list'):
             temp = line.strip().split()
             DRIVE_NAME.append(temp[0].replace("_", " "))
             DRIVE_ID.append(temp[1])
+            try:
+                INDEX_URL.append(temp[2])
+            except IndexError:
+                INDEX_URL.append(None)
+
 if DRIVE_ID:
     pass
 else:

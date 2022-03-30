@@ -20,8 +20,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from tenacity import *
 
-from bot import LOGGER, DRIVE_NAME, DRIVE_ID, IS_TEAM_DRIVE, \
-    parent_id, telegraph, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
+from bot import LOGGER, DRIVE_NAME, DRIVE_ID, INDEX_URL, parent_id, \
+    IS_TEAM_DRIVE, telegraph, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.telegram_helper import button_builder
 
@@ -457,10 +457,18 @@ class GoogleDriveHelper:
                     if file.get('mimeType') == "application/vnd.google-apps.folder":
                         msg += f"🗂️<code>{file.get('name')}</code> <b>(folder)</b><br>" \
                                f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive Link</a></b>"
+                        if INDEX_URL[index] is not None:
+                            file_namee = requests.utils.quote(f"{file.get('name')}")
+                            url = f"{INDEX_URL[index]}search?q={file_namee}"
+                            msg += f"<b> | <a href='{url}'>Index Link</a></b>"
                     else:
                         msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size', 0)))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
                                f"&export=download'>Drive Link</a></b>"
+                        if INDEX_URL[index] is not None:
+                            file_namee = requests.utils.quote(f"{file.get('name')}")
+                            url = f"{INDEX_URL[index]}search?q={file_namee}"
+                            msg += f"<b> | <a href='{url}'>Index Link</a></b>"
                     msg += '<br><br>'
                     content_count += 1
                     response_count += 1
