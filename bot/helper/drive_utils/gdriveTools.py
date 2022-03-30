@@ -21,7 +21,7 @@ from googleapiclient.errors import HttpError
 from tenacity import *
 
 from bot import LOGGER, DRIVE_NAME, DRIVE_ID, IS_TEAM_DRIVE, \
-    parent_id, telegraph, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL
+    parent_id, telegraph, USE_SERVICE_ACCOUNTS, DRIVE_INDEX_URL, INDEX_URL
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.telegram_helper import button_builder
 
@@ -456,11 +456,19 @@ class GoogleDriveHelper:
                 for file in response_dict[files]["files"]:
                     if file.get('mimeType') == "application/vnd.google-apps.folder":
                         msg += f"🗂️<code>{file.get('name')}</code> <b>(folder)</b><br>" \
-                               f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive Link</a></b>"
+                               f"<b><a href='https://drive.google.com/drive/folders/{file.get('id')}'>Drive Link 🔐</a></b>"
+                        if INDEX_URL[index] is not None:
+                            url_path = requests.utils.quote(f'{file.get("name")}')
+                            url = f'{INDEX_URL[index]}search?q={url_path}'
+                            msg += f'<b>  |   <a href="{url}">Index Link 🔐</a></b>'
                     else:
                         msg += f"📄<code>{file.get('name')}</code> <b>({get_readable_file_size(int(file.get('size', 0)))})" \
                                f"</b><br><b><a href='https://drive.google.com/uc?id={file.get('id')}" \
-                               f"&export=download'>Drive Link</a></b>"
+                               f"&export=download'>Drive Link 🔐</a></b>"
+                        if INDEX_URL[index] is not None:
+                            url_path = requests.utils.quote(f'{file.get("name")}')
+                            url = f'{INDEX_URL[index]}search?q={url_path}'
+                            msg += f'<b>  |   <a href="{url}">Index Link 🔐</a></b>'
                     msg += '<br><br>'
                     content_count += 1
                     response_count += 1
@@ -525,6 +533,6 @@ class GoogleDriveHelper:
               f"<b>(Time taken {time_taken}s)</b>"
 
         buttons = button_builder.ButtonMaker()
-        buttons.build_button("VIEW RESULTS 🗂️", f"https://telegra.ph/{self.path[0]}")
+        buttons.build_button("VIEW RESULTS ✅", f"https://telegra.ph/{self.path[0]}")
 
         return msg, InlineKeyboardMarkup(buttons.build_menu(1))

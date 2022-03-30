@@ -80,6 +80,7 @@ except KeyError:
 try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
+    AUTO_DELETE_MESSAGE_DURATION = int(get_config('AUTO_DELETE_MESSAGE_DURATION'))
     parent_id = get_config('DRIVE_FOLDER_ID')
     TELEGRAPH_ACCS = None
     try:
@@ -179,6 +180,7 @@ except KeyError:
 
 DRIVE_NAME = []
 DRIVE_ID = []
+INDEX_URL = []
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
@@ -187,6 +189,10 @@ if os.path.exists('drive_list'):
             temp = line.strip().split()
             DRIVE_NAME.append(temp[0].replace("_", " "))
             DRIVE_ID.append(temp[1])
+            try:
+                INDEX_URL.append(temp[2])
+            except IndexError as e:
+                INDEX_URL.append(None)
 if DRIVE_ID:
     pass
 else:
