@@ -80,7 +80,6 @@ except KeyError:
 try:
     BOT_TOKEN = get_config('BOT_TOKEN')
     OWNER_ID = int(get_config('OWNER_ID'))
-    AUTO_DELETE_MESSAGE_DURATION = int(get_config('AUTO_DELETE_MESSAGE_DURATION'))
     parent_id = get_config('DRIVE_FOLDER_ID')
     TELEGRAPH_ACCS = None
     try:
