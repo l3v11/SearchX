@@ -50,12 +50,18 @@ if choice == 'B' or choice == 'b' or choice == '2':
               f"----------\033[m")
         name = input("Drive Name > ")
         id = input("Drive ID   > ")
+        index = input("Index URL  > ")
         if not name or not id:
             print("\n\033[1;91mERROR:\033[m Drive Name and/or Drive ID is empty")
             exit(1)
         name = name.replace(" ", "_")
+        if index:
+            if index[-1] == "/":
+                index = index[:-1]
+        else:
+            index = ''
         count += 1
-        msg += f"{name} {id}\n"
+        msg += f"{name} {id} {index}\n"
 
     with open('drive_list', 'w') as f:
         f.truncate(0)

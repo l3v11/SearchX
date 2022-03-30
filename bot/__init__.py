@@ -190,8 +190,9 @@ if os.path.exists('drive_list'):
             DRIVE_ID.append(temp[1])
             try:
                 INDEX_URL.append(temp[2])
-            except IndexError as e:
+            except IndexError:
                 INDEX_URL.append(None)
+
 if DRIVE_ID:
     pass
 else:
