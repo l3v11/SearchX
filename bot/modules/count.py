@@ -11,10 +11,13 @@ from bot.helper.telegram_helper.filters import CustomFilters
 def countNode(update, context):
     LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
     args = update.message.text.split(" ", maxsplit=1)
+    reply_to = update.message.reply_to_message
+    link = ''
     if len(args) > 1:
         link = args[1]
-    else:
-        link = ''
+    if reply_to is not None:
+        if len(link) == 0:
+            link = reply_to.text
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Counting:</b> <code>{link}</code>", context.bot, update)
         LOGGER.info(f"Counting: {link}")
