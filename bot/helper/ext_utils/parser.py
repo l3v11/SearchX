@@ -1,11 +1,12 @@
 import base64
+import cloudscraper
 import re
 import requests
 
 from lxml import etree
 from urllib.parse import urlparse, parse_qs
 
-from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
+from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT, XSRF_TOKEN, laravel_session
 from bot.helper.ext_utils.exceptions import DDLException
 
 account = {
@@ -60,7 +61,8 @@ def appdrive(url: str) -> str:
         try:
             response = client.post(url, data=gen_payload(data), headers=headers).json()
             break
-        except: data['type'] += 1
+        except:
+            data['type'] += 1
     if 'url' in response:
         info['gdrive_link'] = response['url']
     elif 'error' in response and response['error']:
@@ -100,3 +102,41 @@ def gdtot(url: str) -> str:
         return info['gdrive_link']
     else:
         raise DDLException(f"{info['message']}")
+
+def sharer(url: str, forced_login=False) -> str:
+    if (XSRF_TOKEN or laravel_session) is None:
+        raise DDLException("XSRF_TOKEN and laravel_session env vars not provided")
+    scraper = cloudscraper.create_scraper(allow_brotli=False)
+    scraper.cookies.update({
+        "XSRF-TOKEN": XSRF_TOKEN,
+        "laravel_session": laravel_session
+    })
+    res = scraper.get(url)
+    token = re.findall("_token\s=\s'(.*?)'", res.text, re.DOTALL)[0]
+    ddl_btn = etree.HTML(res.content).xpath("//button[@id='btndirect']")
+    info = {}
+    info['error'] = True
+    info['link_type'] = 'login'  # direct/login
+    info['forced_login'] = forced_login
+    headers = {
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'x-requested-with': 'XMLHttpRequest'
+    }
+    data = {
+        '_token': token
+    }
+    if len(ddl_btn):
+        info['link_type'] = 'direct'
+    if not forced_login:
+        data['nl'] = 1
+    res = scraper.post(url+'/dl', headers=headers, data=data).json()
+    if 'url' in res and res['url']:
+        info['error'] = False
+        info['gdrive_link'] = res['url']
+    if len(ddl_btn) and not forced_login and not 'url' in info:
+        # retry download via login
+        return sharer(url, forced_login=True)
+    if not info['error']:
+        return info['gdrive_link']
+    else:
+        raise DDLException("Invalid link")

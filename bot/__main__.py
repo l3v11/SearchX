@@ -41,7 +41,7 @@ For <i>file</i> results only:
 
 /{BotCommands.ListCommand} [query]: Search data on Drives
 
-/{BotCommands.CloneCommand} [url]: Copy data from Drive / AppDrive / DriveApp / GDToT to Drive
+/{BotCommands.CloneCommand} [url]: Copy data from Drive / AppDrive / DriveApp / GDToT / Sharer to Drive
 
 /{BotCommands.CountCommand} [drive_url]: Count data of Drive
 

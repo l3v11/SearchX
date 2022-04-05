@@ -136,6 +136,15 @@ except KeyError:
     GDTOT_CRYPT = None
 
 try:
+    XSRF_TOKEN = get_config('XSRF_TOKEN')
+    laravel_session = get_config('laravel_session')
+    if len(XSRF_TOKEN) == 0 or len(laravel_session) == 0:
+        raise KeyError
+except KeyError:
+    XSRF_TOKEN = None
+    laravel_session = None
+
+try:
     DRIVE_INDEX_URL = get_config('DRIVE_INDEX_URL')
     if len(DRIVE_INDEX_URL) == 0:
         DRIVE_INDEX_URL = None
