@@ -4,10 +4,10 @@ from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_appdrive_link, is_gdtot_link, is_sharer_link
+from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_appdrive_link, is_gdtot_link
 from bot.helper.ext_utils.clone_status import CloneStatus
 from bot.helper.ext_utils.exceptions import DDLException
-from bot.helper.ext_utils.parser import appdrive, gdtot, sharer
+from bot.helper.ext_utils.parser import appdrive, gdtot
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -25,8 +25,7 @@ def cloneNode(update, context):
             link = reply_to.text
     is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
-    is_sharer = is_sharer_link(link)
-    if (is_appdrive or is_gdtot or is_sharer):
+    if (is_appdrive or is_gdtot):
         try:
             msg = sendMessage(f"<b>Processing:</b> <code>{link}</code>", context.bot, update)
             LOGGER.info(f"Processing: {link}")
@@ -35,8 +34,6 @@ def cloneNode(update, context):
                 link = appdict.get('gdrive_link')
             if is_gdtot:
                 link = gdtot(link)
-            if is_sharer:
-                link = sharer(link)
             deleteMessage(context.bot, msg)
         except DDLException as e:
             deleteMessage(context.bot, msg)
@@ -59,11 +56,8 @@ def cloneNode(update, context):
             if appdict.get('link_type') == 'login':
                 LOGGER.info(f"Deleting: {link}")
                 gd.deleteFile(link)
-        if is_sharer:
-            LOGGER.info(f"Deleting: {link}")
-            gd.deleteFile(link)
     else:
-        sendMessage("<b>Send a Drive / AppDrive / DriveApp / GDToT / Sharer link along with command</b>", context.bot, update)
+        sendMessage("<b>Send a Drive / AppDrive / DriveApp / GDToT link along with command</b>", context.bot, update)
         LOGGER.info("Cloning: None")
 
 @new_thread

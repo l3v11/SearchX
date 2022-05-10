@@ -26,10 +26,6 @@ def is_gdtot_link(url: str):
     url = re.match(r'https?://.+\.gdtot\.\S+', url)
     return bool(url)
 
-def is_sharer_link(url: str):
-    url = re.match(r'https?://sharer\.pw/\S+', url)
-    return bool(url)
-
 def new_thread(fn):
     def wrapper(*args, **kwargs):
         thread = threading.Thread(target=fn, args=args, kwargs=kwargs)
