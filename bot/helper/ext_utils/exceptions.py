@@ -1,2 +1,2 @@
-class DDLException(Exception):
+class ExceptionHandler(Exception):
     pass

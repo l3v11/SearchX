@@ -6,7 +6,7 @@ from bot import LOGGER, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import new_thread, is_gdrive_link, is_appdrive_link, is_gdtot_link
 from bot.helper.ext_utils.clone_status import CloneStatus
-from bot.helper.ext_utils.exceptions import DDLException
+from bot.helper.ext_utils.exceptions import ExceptionHandler
 from bot.helper.ext_utils.parser import appdrive, gdtot
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -35,7 +35,7 @@ def cloneNode(update, context):
             if is_gdtot:
                 link = gdtot(link)
             deleteMessage(context.bot, msg)
-        except DDLException as e:
+        except ExceptionHandler as e:
             deleteMessage(context.bot, msg)
             LOGGER.error(e)
             return sendMessage(str(e), context.bot, update)

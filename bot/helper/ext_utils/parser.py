@@ -6,7 +6,7 @@ from lxml import etree
 from urllib.parse import urlparse, parse_qs
 
 from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
-from bot.helper.ext_utils.exceptions import DDLException
+from bot.helper.ext_utils.exceptions import ExceptionHandler
 
 account = {
     'email': APPDRIVE_EMAIL, 
@@ -30,7 +30,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
 
 def appdrive(url: str) -> str:
     if (APPDRIVE_EMAIL or APPDRIVE_PASS) is None:
-        raise DDLException("APPDRIVE_EMAIL and APPDRIVE_PASS env vars not provided")
+        raise ExceptionHandler("APPDRIVE_EMAIL and APPDRIVE_PASS env vars not provided")
     client = requests.Session()
     client.headers.update({
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
@@ -40,7 +40,7 @@ def appdrive(url: str) -> str:
     try:
         key = re.findall(r'"key",\s+"(.*?)"', res.text)[0]
     except IndexError:
-        raise DDLException("Invalid link")
+        raise ExceptionHandler("Invalid link")
     ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
     info = {}
     info['error'] = False
@@ -74,11 +74,11 @@ def appdrive(url: str) -> str:
     if not info['error']:
         return info
     else:
-        raise DDLException(f"{info['message']}")
+        raise ExceptionHandler(f"{info['message']}")
 
 def gdtot(url: str) -> str:
     if GDTOT_CRYPT is None:
-        raise DDLException("GDTOT_CRYPT env var not provided")
+        raise ExceptionHandler("GDTOT_CRYPT env var not provided")
     client = requests.Session()
     client.cookies.update({'crypt': GDTOT_CRYPT})
     res = client.get(url)
@@ -100,4 +100,4 @@ def gdtot(url: str) -> str:
     if not info['error']:
         return info['gdrive_link']
     else:
-        raise DDLException(f"{info['message']}")
+        raise ExceptionHandler(f"{info['message']}")

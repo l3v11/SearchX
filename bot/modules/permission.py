@@ -10,19 +10,20 @@ from bot.helper.telegram_helper.filters import CustomFilters
 @new_thread
 def permissionNode(update, context):
     LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
-    args = update.message.text.split(" ", maxsplit=1)
-    reply_to = update.message.reply_to_message
+    args = update.message.text.split(" ", maxsplit=2)
     link = ''
+    access = ''
     if len(args) > 1:
         link = args[1]
-    if reply_to is not None:
-        if len(link) == 0:
-            link = reply_to.text
+        try:
+            access = args[2]
+        except IndexError:
+            access = "anyone"
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Setting permission:</b> <code>{link}</code>", context.bot, update)
         LOGGER.info(f"Setting permission: {link}")
         gd = GoogleDriveHelper()
-        result = gd.setPerm(link)
+        result = gd.setPerm(link, access)
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update)
     else:

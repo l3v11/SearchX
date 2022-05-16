@@ -45,7 +45,7 @@ For <i>file</i> results only:
 
 /{BotCommands.CountCommand} [drive_url]: Count data of Drive
 
-/{BotCommands.PermissionCommand} [drive_url]: Set data permission to 'Anyone with the link' (Only owner)
+/{BotCommands.PermissionCommand} [drive_url] [email]: Set data permission of Drive (Email optional & Only owner)
 
 /{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only owner)
 

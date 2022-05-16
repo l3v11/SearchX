@@ -16,9 +16,9 @@ def list_drive(update, context):
         return
     reply = sendMessage('<b>Search in progress...</b>', context.bot, update)
     LOGGER.info(f"Query: {search}")
-    google_drive = GoogleDriveHelper(None)
+    gd = GoogleDriveHelper()
     try:
-        msg, button = google_drive.drive_list(search)
+        msg, button = gd.drive_list(search)
     except Exception as e:
         msg, button = "There was an error", None
         LOGGER.exception(e)
