@@ -7,14 +7,14 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 
 def list_drive(update, context):
-    LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
+    LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
     try:
         search = update.message.text.split(' ', maxsplit=1)[1]
     except IndexError:
-        sendMessage('<b>Send a Query along with command</b>', context.bot, update)
+        sendMessage('<b>Send a Query along with command</b>', context.bot, update.message)
         LOGGER.info("Query: None")
         return
-    reply = sendMessage('<b>Search in progress...</b>', context.bot, update)
+    reply = sendMessage('<b>Search in progress...</b>', context.bot, update.message)
     LOGGER.info(f"Query: {search}")
     gd = GoogleDriveHelper()
     try:

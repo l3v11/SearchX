@@ -1,31 +1,58 @@
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 
 class CloneStatus:
-    def __init__(self, size=0):
-        self.size = size
-        self.name = ''
-        self.status = False
-        self.source_folder_name = ''
-        self.source_folder_link = ''
+    def __init__(self, obj, size, files, message, gid):
+        self.__obj = obj
+        self.__size = size
+        self.__files = files
+        self.message = message
+        self.__gid = gid
 
-    def set_status(self, stat):
-        self.status = stat
+    def processed_bytes(self):
+        return self.__obj.transferred_size
 
-    def set_name(self, name=''):
-        self.name = name
+    def size_raw(self):
+        return self.__size
 
-    def get_name(self):
-        return self.name
+    def size(self):
+        return get_readable_file_size(self.__size)
 
-    def add_size(self, value):
-        self.size += int(value)
+    def name(self):
+        return self.__obj.name
 
-    def get_size(self):
-        return get_readable_file_size(int(self.size))
+    def files(self):
+        return self.__files
 
-    def done(self):
-        return self.status
+    def processed_files(self):
+        return self.__obj.total_files
 
-    def set_source_folder(self, folder_name, link):
-        self.source_folder_name = folder_name
-        self.source_folder_link = link
+    def gid(self) -> str:
+        return self.__gid
+
+    def progress_raw(self):
+        try:
+            return self.__obj.transferred_size / self.__size * 100
+        except ZeroDivisionError:
+            return 0
+
+    def progress(self):
+        return f'{round(self.progress_raw(), 2)}%'
+
+    def speed_raw(self):
+        """
+        :return: Download speed in Bytes/Seconds
+        """
+        return self.__obj.cspeed()
+
+    def speed(self):
+        return f'{get_readable_file_size(self.speed_raw())}/s'
+
+    def eta(self):
+        try:
+            seconds = (self.__size - self.__obj.transferred_size) / self.speed_raw()
+            return f'{get_readable_time(seconds)}'
+        except ZeroDivisionError:
+            return '-'
+
+    def download(self):
+        return self.__obj

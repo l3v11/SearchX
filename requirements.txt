@@ -2,6 +2,7 @@ dnspython
 google-api-python-client
 google-auth-oauthlib
 lxml
+psutil
 pymongo
 python-dotenv
 python-magic

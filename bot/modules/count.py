@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 
 @new_thread
 def countNode(update, context):
-    LOGGER.info('User: {} [{}]'.format(update.message.from_user.first_name, update.message.from_user.id))
+    LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
     args = update.message.text.split(" ", maxsplit=1)
     reply_to = update.message.reply_to_message
     link = ''
@@ -19,14 +19,14 @@ def countNode(update, context):
         if len(link) == 0:
             link = reply_to.text
     if is_gdrive_link(link):
-        msg = sendMessage(f"<b>Counting:</b> <code>{link}</code>", context.bot, update)
+        msg = sendMessage(f"<b>Counting:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Counting: {link}")
         gd = GoogleDriveHelper()
         result = gd.count(link)
         deleteMessage(context.bot, msg)
-        sendMessage(result, context.bot, update)
+        sendMessage(result, context.bot, update.message)
     else:
-        sendMessage("<b>Send a Drive link along with command</b>", context.bot, update)
+        sendMessage("<b>Send a Drive link along with command</b>", context.bot, update.message)
         LOGGER.info("Counting: None")
 
 count_handler = CommandHandler(BotCommands.CountCommand, countNode,

@@ -9,7 +9,7 @@ from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
 from bot.helper.ext_utils.exceptions import ExceptionHandler
 
 account = {
-    'email': APPDRIVE_EMAIL, 
+    'email': APPDRIVE_EMAIL,
     'passwd': APPDRIVE_PASS
 }
 

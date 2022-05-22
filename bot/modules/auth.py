@@ -53,7 +53,7 @@ def authorize(update, context):
             with open('authorized_chats.txt', 'a') as file:
                 file.write(f'{user_id}\n')
                 msg = 'Authorization granted'
-    sendMessage(msg, context.bot, update)
+    sendMessage(msg, context.bot, update.message)
 
 def unauthorize(update, context):
     reply_message = None
@@ -101,18 +101,18 @@ def unauthorize(update, context):
             file.truncate(0)
             for i in AUTHORIZED_CHATS:
                 file.write(f'{i}\n')
-    sendMessage(msg, context.bot, update)
+    sendMessage(msg, context.bot, update.message)
 
 def auth_chats(update, context):
     users = ''
     for user in AUTHORIZED_CHATS:
         users += f"{user}\n"
     users = users if users != '' else "None"
-    sendMessage(f'<b><u>Authorized Chats</u></b>\n<code>{users}</code>\n', context.bot, update)
+    sendMessage(f'<b><u>Authorized Chats</u></b>\n<code>{users}</code>\n', context.bot, update.message)
 
-authorize_handler = CommandHandler(command=BotCommands.AuthorizeCommand, callback=authorize,
-                                    filters=CustomFilters.owner_filter, run_async=True)
-unauthorize_handler = CommandHandler(command=BotCommands.UnauthorizeCommand, callback=unauthorize,
+authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
+                                   filters=CustomFilters.owner_filter, run_async=True)
+unauthorize_handler = CommandHandler(BotCommands.UnauthorizeCommand, unauthorize,
                                     filters=CustomFilters.owner_filter, run_async=True)
 auth_handler = CommandHandler(BotCommands.UsersCommand, auth_chats,
                               filters=CustomFilters.owner_filter, run_async=True)

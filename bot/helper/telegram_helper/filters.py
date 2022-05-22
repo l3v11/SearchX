@@ -4,21 +4,21 @@ from telegram.ext import MessageFilter
 from bot import AUTHORIZED_CHATS, OWNER_ID
 
 class CustomFilters:
-    class _OwnerFilter(MessageFilter):
-        def filter(self, message):
+    class __OwnerFilter(MessageFilter):
+        def filter(self, message: Message):
             return bool(message.from_user.id == OWNER_ID)
 
-    owner_filter = _OwnerFilter()
+    owner_filter = __OwnerFilter()
 
-    class _AuthorizedUserFilter(MessageFilter):
-        def filter(self, message):
+    class __AuthorizedUserFilter(MessageFilter):
+        def filter(self, message: Message):
             id = message.from_user.id
             return bool(id in AUTHORIZED_CHATS or id == OWNER_ID)
 
-    authorized_user = _AuthorizedUserFilter()
+    authorized_user = __AuthorizedUserFilter()
 
-    class _AuthorizedChat(MessageFilter):
-        def filter(self, message):
+    class __AuthorizedChat(MessageFilter):
+        def filter(self, message: Message):
             return bool(message.chat.id in AUTHORIZED_CHATS)
 
-    authorized_chat = _AuthorizedChat()
+    authorized_chat = __AuthorizedChat()
