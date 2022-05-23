@@ -16,7 +16,8 @@ if os.path.exists('token.json'):
     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     print("\n\033[1;96mtoken.json\033[m file exists")
 
-# Convert token.pickle file to token.json
+# If the file token.pickle exists and token.json doesn't exist, then
+# let it be converted to token.json
 if not os.path.exists('token.json') and os.path.exists('token.pickle'):
     with open('token.pickle', "rb") as f:
         creds = pickle.load(f)
