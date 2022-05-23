@@ -1,5 +1,5 @@
-from os import path
-from pickle import Unpickler
+import os
+import pickle
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -12,21 +12,19 @@ creds = None
 # The file token.json stores the user's access and refresh tokens, and is
 # created automatically when the authorization flow completes for the first
 # time.
-if path.exists('token.json'):
+if os.path.exists('token.json'):
     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     print("\n\033[1;96mtoken.json\033[m file exists")
-# If there are no (valid) credentials available, let the user log in.
 
-# Convert Token Pickle to Token Json
-if path.exists('token.pickle'):
+# Convert token.pickle file to token.json
+if not os.path.exists('token.json') and os.path.exists('token.pickle'):
     with open('token.pickle', "rb") as f:
-        unpickler = Unpickler(f)
-        creds = unpickler.load()
+        creds = pickle.load(f)
     with open('token.json', 'w') as token:
         token.write(creds.to_json())
-    print("\nGenerated \033[1;96mtoken.json\033[m file from token.pickle")
-    exit(1)
+    print("\nConverted \033[1;94mtoken.pickle\033[m file to \033[1;96mtoken.json\033[m")
 
+# If there are no (valid) credentials available, let the user log in.
 if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
