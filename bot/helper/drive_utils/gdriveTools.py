@@ -8,6 +8,8 @@ import time
 import urllib.parse as urlparse
 from urllib.parse import parse_qs
 from random import randrange
+from tenacity import retry, wait_exponential, stop_after_attempt, \
+    retry_if_exception_type, before_log, RetryError
 from timeit import default_timer as timer
 
 from telegram import InlineKeyboardMarkup
@@ -18,7 +20,6 @@ from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from tenacity import *
 
 from bot import LOGGER, DRIVE_NAMES, DRIVE_IDS, INDEX_URLS, parent_id, \
     IS_TEAM_DRIVE, telegraph, USE_SERVICE_ACCOUNTS, INDEX_URL
@@ -34,7 +35,6 @@ telegraph_limit = 60
 
 class GoogleDriveHelper:
     def __init__(self, name=None):
-        self.__G_DRIVE_TOKEN_FILE = "token.json"
         # Check https://developers.google.com/drive/scopes for all available scopes
         self.__OAUTH_SCOPE = ['https://www.googleapis.com/auth/drive']
         self.__G_DRIVE_DIR_MIME_TYPE = "application/vnd.google-apps.folder"
@@ -61,31 +61,26 @@ class GoogleDriveHelper:
             return 0
 
     def authorize(self):
-        # Get credentials
-        credentials = None
+        creds = None
         if not USE_SERVICE_ACCOUNTS:
-            if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
-                credentials = Credentials.from_authorized_user_file(self.__G_DRIVE_TOKEN_FILE, self.__OAUTH_SCOPE)
-            if credentials is None or not credentials.valid:
-                if credentials and credentials.expired and credentials.refresh_token:
-                    credentials.refresh(Request())
+            if os.path.exists('token.json'):
+                creds = Credentials.from_authorized_user_file('token.json', self.__OAUTH_SCOPE)
+            else:
+                LOGGER.error("token.json file is missing")
         else:
             LOGGER.info(f"Authorizing with {SERVICE_ACCOUNT_INDEX}.json file")
-            credentials = service_account.Credentials.from_service_account_file(
+            creds = service_account.Credentials.from_service_account_file(
                 f'accounts/{SERVICE_ACCOUNT_INDEX}.json', scopes=self.__OAUTH_SCOPE)
-        return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+        return build('drive', 'v3', credentials=creds, cache_discovery=False)
 
     def alt_authorize(self):
-        credentials = None
+        creds = None
         if USE_SERVICE_ACCOUNTS and not self.alt_auth:
             self.alt_auth = True
-            if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
+            if os.path.exists('token.json'):
                 LOGGER.info("Authorizing with token.json file")
-                credentials = Credentials.from_authorized_user_file(self.__G_DRIVE_TOKEN_FILE, self.__OAUTH_SCOPE)
-                if credentials is None or not credentials.valid:
-                    if credentials and credentials.expired and credentials.refresh_token:
-                        credentials.refresh(Request())
-                return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+                creds = Credentials.from_authorized_user_file('token.json', self.__OAUTH_SCOPE)
+                return build('drive', 'v3', credentials=creds, cache_discovery=False)
         return None
 
     @staticmethod
@@ -162,7 +157,7 @@ class GoogleDriveHelper:
         try:
             if access != "anyone":
                 self.__set_permission_email(file_id, access)
-                msg += "Added <code>{access}</code> as viewer"
+                msg += f"Added <code>{access}</code> as viewer"
             else:
                 self.__set_permission_public(file_id)
                 msg += "Set permission to <code>Anyone with the link</code>"
@@ -263,11 +258,11 @@ class GoogleDriveHelper:
                 msg += f'\n<b>Type:</b> Folder'
                 msg += f'\n<b>SubFolders:</b> {self.total_folders}'
                 msg += f'\n<b>Files:</b> {self.total_files}'
-                msg += f'\n\n<a href="{self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)}"><b>Drive Link</b></a>'
+                msg += f'\n\n<b><a href="{self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)}">Drive Link</a></b>'
                 if INDEX_URL is not None:
                     url_path = requests.utils.quote(f'{meta.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}/'
-                    msg += f' | <a href="{url}"><b>Index Link</b></a>'
+                    msg += f'<b> | <a href="{url}">Index Link</a></b>'
             else:
                 file = self.copyFile(meta.get('id'), parent_id)
                 msg += f'<b>Name:</b> <code>{file.get("name")}</code>'
@@ -275,11 +270,11 @@ class GoogleDriveHelper:
                     mime_type = 'File'
                 msg += f'\n<b>Size:</b> {get_readable_file_size(int(meta.get("size", 0)))}'
                 msg += f'\n<b>Type:</b> {mime_type}'
-                msg += f'\n\n<a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}"><b>Drive Link</b></a>'
+                msg += f'\n\n<b><a href="{self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))}">Drive Link</a></b>'
                 if INDEX_URL is not None:
                     url_path = requests.utils.quote(f'{file.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}'
-                    msg += f' | <a href="{url}"><b>Index Link</b></a>'
+                    msg += f'<b> | <a href="{url}">Index Link</a></b>'
         except Exception as err:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
@@ -296,7 +291,6 @@ class GoogleDriveHelper:
             else:
                 msg = str(err)
             LOGGER.error(msg)
-            return msg
         return msg
 
     def cloneFolder(self, name, local_path, folder_id, parent_id):

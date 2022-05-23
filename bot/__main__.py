@@ -1,14 +1,16 @@
 import time
 
 from psutil import cpu_percent, cpu_count, disk_usage, virtual_memory
+from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, dispatcher, updater
+from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, telegraph, dispatcher, updater
 from bot.modules import auth, cancel, clone, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.button_builder import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import *
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile
 
 def start(update, context):
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
@@ -45,56 +47,78 @@ def stats(update, context):
             f"\n<b>DISK:</b> {disk}% | <b>Uptime:</b> {uptime}"
     sendMessage(stats, context.bot, update.message)
 
-def bot_help(update, context):
-    help_string = f'''
-<u><i><b>Usage:</b></i></u>
-
-For <i>folder</i> results only:
-<code>/{BotCommands.ListCommand} -d &lt;query&gt;</code>
-
-For <i>file</i> results only:
-<code>/{BotCommands.ListCommand} -f &lt;query&gt;</code>
-
-<u><i><b>Commands:</b></i></u>
-
-/{BotCommands.StartCommand}: Start the bot
-
-/{BotCommands.ListCommand} [query]: Search data on Drives
-
-/{BotCommands.CloneCommand} [url]: Copy data from Drive / AppDrive / DriveApp / GDToT to Drive
-
-/{BotCommands.CountCommand} [drive_url]: Count data of Drive
-
-/{BotCommands.CancelCommand} [gid]: Cancel a task
-
-/{BotCommands.StatusCommand}: Get a status of all tasks
-
-/{BotCommands.PermissionCommand} [drive_url] [email]: Set data permission of Drive (Email optional & Only owner)
-
-/{BotCommands.DeleteCommand} [drive_url]: Delete data from Drive (Only owner)
-
-/{BotCommands.AuthorizeCommand}: Authorize an user or a chat for using the bot (Only owner)
-
-/{BotCommands.UnauthorizeCommand}: Unauthorize an user or a chat for using the bot (Only owner)
-
-/{BotCommands.UsersCommand}: View authorized chats (Only owner)
-
-/{BotCommands.ShellCommand} [cmd]: Run commands in terminal (Only owner)
-
-/{BotCommands.ExecHelpCommand}: Get help for executor (Only owner)
-
-/{BotCommands.PingCommand}: Ping the bot
-
-/{BotCommands.StatsCommand}: Get the system stats
-
-/{BotCommands.LogCommand}: Get the log file (Only owner)
-
-/{BotCommands.HelpCommand}: Get this message
-'''
-    sendMessage(help_string, context.bot, update.message)
-
 def log(update, context):
     sendLogFile(context.bot, update.message)
+
+help_string = '''
+<b><a href='https://github.com/l3v11/SearchX'>SearchX</a></b> - The Ultimate Telegram Bot for Google Drive
+
+Choose a help category:
+'''
+
+help_string_user = f'''
+<u><b>User Commands</b></u>
+<br><br>
+• <b>/{BotCommands.StartCommand}</b>: Start the bot
+<br><br>
+• <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Search data on Drives
+<br><br>
+• <b>/{BotCommands.ListCommand} -d</b> &lt;query&gt;: Search folders on Drives
+<br><br>
+• <b>/{BotCommands.ListCommand} -f</b> &lt;query&gt;: Search files on Drives
+<br><br>
+• <b>/{BotCommands.CloneCommand}</b> &lt;url&gt;: Copy data from Drive / AppDrive / DriveApp / GDToT to Drive
+<br><br>
+• <b>/{BotCommands.CountCommand}</b> &lt;drive_url&gt;: Count data of Drive
+<br><br>
+• <b>/{BotCommands.CancelCommand}</b> &lt;gid&gt;: Cancel a task
+<br><br>
+• <b>/{BotCommands.StatusCommand}</b>: Get a status of all tasks
+<br><br>
+• <b>/{BotCommands.PingCommand}</b>: Ping the bot
+<br><br>
+• <b>/{BotCommands.StatsCommand}</b>: Get the system stats
+<br><br>
+• <b>/{BotCommands.HelpCommand}</b>: Get this message
+'''
+
+help_user = telegraph[0].create_page(
+    title='SearchX Help',
+    author_name='Levi',
+    author_url='https://t.me/l3v11',
+    html_content=help_string_user)['url']
+
+help_string_admin = f'''
+<u><b>Admin Commands</b></u>
+<br><br>
+• <b>/{BotCommands.PermissionCommand}</b> &lt;drive_url&gt; &lt;email&gt;: Set data permission of Drive (Email optional)
+<br><br>
+• <b>/{BotCommands.DeleteCommand}</b> &lt;drive_url&gt;: Delete data from Drive
+<br><br>
+• <b>/{BotCommands.AuthorizeCommand}</b>: Authorize an user or a chat for using the bot
+<br><br>
+• <b>/{BotCommands.UnauthorizeCommand}</b>: Unauthorize an user or a chat for using the bot
+<br><br>
+• <b>/{BotCommands.UsersCommand}</b>: View authorized chats
+<br><br>
+• <b>/{BotCommands.ShellCommand}</b> &lt;cmd&gt;: Run commands in terminal
+<br><br>
+• <b>/{BotCommands.ExecHelpCommand}</b>: Get help about executor
+<br><br>
+• <b>/{BotCommands.LogCommand}</b>: Get the log file
+'''
+
+help_admin = telegraph[0].create_page(
+    title='SearchX Help',
+    author_name='Levi',
+    author_url='https://t.me/l3v11',
+    html_content=help_string_admin)['url']
+
+def bot_help(update, context):
+    button = ButtonMaker()
+    button.build_button("User", f"{help_user}")
+    button.build_button("Admin", f"{help_admin}")
+    sendMarkup(help_string, context.bot, update.message, InlineKeyboardMarkup(button.build_menu(2)))
 
 def main():
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
@@ -102,15 +126,15 @@ def main():
                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     stats_handler = CommandHandler(BotCommands.StatsCommand, stats,
                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
-                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
                                  filters=CustomFilters.owner_filter, run_async=True)
+    help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
+                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(stats_handler)
-    dispatcher.add_handler(help_handler)
     dispatcher.add_handler(log_handler)
+    dispatcher.add_handler(help_handler)
     updater.start_polling()
     LOGGER.info("Bot started")
     updater.idle()
