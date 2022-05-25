@@ -79,14 +79,14 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.StatsCommand}</b>: Get the system stats
 <br><br>
-• <b>/{BotCommands.HelpCommand}</b>: Get this message
+• <b>/{BotCommands.HelpCommand}</b>: Get help about the bot
 '''
 
 help_user = telegraph[0].create_page(
     title='SearchX Help',
     author_name='Levi',
     author_url='https://t.me/l3v11',
-    html_content=help_string_user)['url']
+    html_content=help_string_user)['path']
 
 help_string_admin = f'''
 <u><b>Admin Commands</b></u>
@@ -112,12 +112,12 @@ help_admin = telegraph[0].create_page(
     title='SearchX Help',
     author_name='Levi',
     author_url='https://t.me/l3v11',
-    html_content=help_string_admin)['url']
+    html_content=help_string_admin)['path']
 
 def bot_help(update, context):
     button = ButtonMaker()
-    button.build_button("User", f"{help_user}")
-    button.build_button("Admin", f"{help_admin}")
+    button.build_button("User", f"https://telegra.ph/{help_user}")
+    button.build_button("Admin", f"https://telegra.ph/{help_admin}")
     sendMarkup(help_string, context.bot, update.message, InlineKeyboardMarkup(button.build_menu(2)))
 
 def main():

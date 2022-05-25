@@ -11,6 +11,7 @@ import telegram.ext as tg
 
 from dotenv import load_dotenv
 from telegraph import Telegraph
+from telegraph.exceptions import RetryAfterError
 from threading import Lock
 
 socket.setdefaulttimeout(600)
@@ -224,13 +225,21 @@ if os.path.exists('drive_list'):
             except IndexError:
                 INDEX_URLS.append(None)
 
+def create_account(sname):
+    try:
+        telegra_ph = Telegraph()
+        telegra_ph.create_account(short_name=sname)
+        telegraph_token = telegra_ph.get_access_token()
+        telegraph.append(Telegraph(access_token=telegraph_token))
+        time.sleep(0.5)
+    except RetryAfterError as e:
+        LOGGER.info(f"Cooldown: {e.retry_after} seconds")
+        time.sleep(e.retry_after)
+        create_account(sname)
+
 for i in range(TELEGRAPH_ACCS):
     sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
-    telegra_ph = Telegraph()
-    telegra_ph.create_account(short_name=sname)
-    telegraph_token = telegra_ph.get_access_token()
-    telegraph.append(Telegraph(access_token=telegraph_token))
-    time.sleep(0.5)
+    create_account(sname)
 LOGGER.info(f"Generated {TELEGRAPH_ACCS} telegraph tokens")
 
 updater = tg.Updater(token=BOT_TOKEN, use_context=True)
