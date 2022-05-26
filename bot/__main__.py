@@ -5,7 +5,7 @@ from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 
 from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, telegraph, dispatcher, updater
-from bot.modules import auth, cancel, clone, count, delete, eval, list, permission, shell, status
+from bot.modules import auth, cancel, clone, count, delete, eval, list, permission, shell, status, drv_bm
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_builder import ButtonMaker
@@ -63,17 +63,33 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Search data on Drives
 <br><br>
+• <b>/{BotCommands.ListCommand} -drive &lt;Drive Name&gt;</b> &lt;query&gt;: Search data on Specific Drive (Must be in drive_list) [-f and -d, if used, should be placed before -drive]
+<br><br>
 • <b>/{BotCommands.ListCommand} -d</b> &lt;query&gt;: Search folders on Drives
 <br><br>
 • <b>/{BotCommands.ListCommand} -f</b> &lt;query&gt;: Search files on Drives
 <br><br>
 • <b>/{BotCommands.CloneCommand}</b> &lt;url&gt;: Copy data from Drive / AppDrive / DriveApp / GDToT to Drive
 <br><br>
+• <b>/{BotCommands.CloneCommand} -drive &lt;Drive Name&gt;</b> &lt;url&gt;: Copy data to Specific Drive (Must be in drive_list)
+<br><br>
+• <b>/{BotCommands.CloneCommand} -folder &lt;Folder_ID&gt;</b> &lt;url&gt;: Copy data to Specific Folder/Drive using it's ID
+<br><br>
+• <b>/{BotCommands.CloneCommand} -bm &lt;bookmark name&gt;</b> &lt;url&gt;: Copy data to Specific Folder/Drive bookmarked to DataBase
+<br><br>
 • <b>/{BotCommands.CountCommand}</b> &lt;drive_url&gt;: Count data of Drive
 <br><br>
 • <b>/{BotCommands.CancelCommand}</b> &lt;gid&gt;: Cancel a task
 <br><br>
 • <b>/{BotCommands.StatusCommand}</b>: Get a status of all tasks
+<br><br>
+• <b>/{BotCommands.ListDriveCommand}</b>: List all drives from drive_list
+<br><br>
+• <b>/{BotCommands.AddBmCommand} &lt;bookmark name&gt; &lt;folder/drive id&gt;</b>: Add a bookmark to DataBase
+<br><br>
+• <b>/{BotCommands.RmBmCommand} &lt;bookmark name&gt;</b>: Delete a bookmark from DataBase
+<br><br>
+• <b>/{BotCommands.ListBmCommand}</b>: List all bookmarks from DataBase
 <br><br>
 • <b>/{BotCommands.PingCommand}</b>: Ping the bot
 <br><br>

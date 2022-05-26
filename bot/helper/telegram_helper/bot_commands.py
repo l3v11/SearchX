@@ -20,5 +20,9 @@ class _BotCommands:
         self.StatsCommand = 'stats'
         self.LogCommand = 'log'
         self.HelpCommand = 'help'
+        self.AddBmCommand = 'addbm'
+        self.RmBmCommand = 'rmbm'
+        self.ListBmCommand = 'listbm'
+        self.ListDriveCommand = 'listdrives'
 
 BotCommands = _BotCommands()

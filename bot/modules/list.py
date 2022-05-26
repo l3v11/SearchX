@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, dispatcher
+from bot import LOGGER, DRIVE_IDS, DRIVE_NAMES, dispatcher
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -24,6 +24,16 @@ def list_drive(update, context):
         LOGGER.exception(e)
     editMessage(msg, reply, button)
 
+def list_clone_drives(update, context):
+    drives = ''
+    for i in range(len(DRIVE_NAMES)):
+        drives += f'{i+1}. {DRIVE_NAMES[i]} - <code>{DRIVE_IDS[i]}</code>\n'
+    sendMessage(f'<b><u>Your Drives</u></b>\n\n{drives}\n', context.bot, update.message)
+
 list_handler = CommandHandler(BotCommands.ListCommand, list_drive,
                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+
+list_drive_handler = CommandHandler(BotCommands.ListDriveCommand, list_clone_drives, filters=CustomFilters.authorized_user, run_async=True)
+
 dispatcher.add_handler(list_handler)
+dispatcher.add_handler(list_drive_handler)

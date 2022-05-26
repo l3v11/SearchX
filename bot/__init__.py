@@ -74,6 +74,8 @@ try:
 except:
     pass
 
+MY_BOOKMARKS = {}
+
 try:
     BOT_TOKEN = get_config('BOT_TOKEN')
 except:

@@ -3,7 +3,7 @@ import string
 
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, dispatcher, CLONE_LIMIT, download_dict, download_dict_lock, Interval
+from bot import LOGGER, MY_BOOKMARKS, dispatcher, CLONE_LIMIT, download_dict, download_dict_lock, Interval
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import new_thread, get_readable_file_size, is_gdrive_link, \
     is_appdrive_link, is_gdtot_link
@@ -21,8 +21,21 @@ def cloneNode(update, context):
     args = update.message.text.split(" ", maxsplit=1)
     reply_to = update.message.reply_to_message
     link = ''
+    clone_drive_name = None
+    clone_folder_id = None
+    clone_bm = None
     if len(args) > 1:
-        link = args[1]
+        if "-drive" in args[1]:
+            clone_drive_name = args[1].split("-drive")[1].strip().split(" ")[0]
+            link = args[1].split("-drive")[1].strip().split(" ")[1]
+        elif "-folder" in args[1]:
+            clone_folder_id = args[1].split("-folder")[1].strip().split(" ")[0]
+            link = args[1].split("-folder")[1].strip().split(" ")[1]
+        elif "-bm" in args[1]:
+            clone_bm = args[1].split("-bm")[1].strip().split(" ")[0]
+            link = args[1].split("-bm")[1].strip().split(" ")[1]
+        else:
+            link = args[1]
     if reply_to is not None:
         if len(link) == 0:
             link = reply_to.text
@@ -59,7 +72,16 @@ def cloneNode(update, context):
         if files <= 20:
             msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update.message)
             LOGGER.info(f"Cloning: {link}")
-            result = gd.clone(link)
+            if clone_drive_name is not None:
+                clone_drive = gd.get_drive_id_from_name(clone_drive_name)
+                result = gd.clone(link, clone_drive)
+            elif clone_folder_id is not None:
+                result = gd.clone(link, clone_folder_id)
+            elif clone_bm is not None:
+                print(MY_BOOKMARKS[clone_bm])
+                result = gd.clone(link, MY_BOOKMARKS[clone_bm])
+            else:
+                result = gd.clone(link)
             deleteMessage(context.bot, msg)
         else:
             drive = GoogleDriveHelper(name)
@@ -69,7 +91,15 @@ def cloneNode(update, context):
                 download_dict[update.message.message_id] = clone_status
             sendStatusMessage(update.message, context.bot)
             LOGGER.info(f"Cloning: {link}")
-            result = drive.clone(link)
+            if clone_drive_name is not None:
+                clone_drive = drive.get_drive_id_from_name(clone_drive_name)
+                result = drive.clone(link, clone_drive)
+            elif clone_folder_id is not None:
+                result = drive.clone(link, clone_folder_id)
+            elif clone_bm is not None:
+                result = drive.clone(link, MY_BOOKMARKS.get(clone_bm))
+            else:
+                result = drive.clone(link)
             with download_dict_lock:
                 del download_dict[update.message.message_id]
                 count = len(download_dict)

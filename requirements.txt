@@ -3,7 +3,7 @@ google-api-python-client
 google-auth-oauthlib
 lxml
 psutil
-pymongo
+redis
 python-dotenv
 python-magic
 python-telegram-bot

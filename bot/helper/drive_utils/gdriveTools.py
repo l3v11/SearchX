@@ -250,7 +250,7 @@ class GoogleDriveHelper:
                 break
         return files
 
-    def clone(self, link):
+    def clone(self, link, parent_id=parent_id):
         self.start_time = time.time()
         self.total_files = 0
         self.total_folders = 0
@@ -495,16 +495,30 @@ class GoogleDriveHelper:
                         fields='files(id, name, mimeType, size)',
                         orderBy='folder, modifiedTime desc'))
         batch.execute()
+    def get_drive_id_from_name(self, name):
+        drive_id = DRIVE_IDS[int(DRIVE_NAMES.index(name))]
+        return drive_id
 
     def drive_list(self, file_name):
         file_name = self.escapes(file_name)
         search_type = None
-        if re.search("^-d ", file_name, re.IGNORECASE):
-            search_type = '-d'
-            file_name = file_name[3: len(file_name)]
-        elif re.search("^-f ", file_name, re.IGNORECASE):
-            search_type = '-f'
-            file_name = file_name[3: len(file_name)]
+        search_drive = None
+        if re.search("-drive", file_name, re.IGNORECASE):
+            search_drive = file_name.split("-drive")[1].strip().split(" ")[0]
+            DRIVE_IDS = [self.get_drive_id_from_name(search_drive)]
+            if re.search("^-d ", file_name, re.IGNORECASE):
+                search_type = '-d'
+            elif re.search("^-f ", file_name, re.IGNORECASE):
+                search_type = '-f'
+            file_name = " ".join(file_name.split("-drive")[1].strip().split(" ")[1:])
+            LOGGER.info(f"Searching for {file_name} in {search_drive}")
+        else:
+            if re.search("^-d ", file_name, re.IGNORECASE):
+                search_type = '-d'
+                file_name = file_name[3: len(file_name)]
+            elif re.search("^-f ", file_name, re.IGNORECASE):
+                search_type = '-f'
+                file_name = file_name[3: len(file_name)]
         msg = ''
         acc_no = -1
         page_per_acc = 2
@@ -517,7 +531,10 @@ class GoogleDriveHelper:
         self.drive_query(DRIVE_IDS, search_type, file_name)
         add_title_msg = True
         for files in self.response:
-            index = int(files) - 1
+            if search_drive is not None:
+                    index = DRIVE_NAMES.index(search_drive)
+            else:
+                index = int(files) - 1
             if add_title_msg:
                 msg = f'<h4>Query: {file_name}</h4><br>'
                 add_title_msg = False
