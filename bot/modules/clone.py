@@ -18,14 +18,23 @@ from bot.helper.telegram_helper.filters import CustomFilters
 @new_thread
 def cloneNode(update, context):
     LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
-    args = update.message.text.split(" ", maxsplit=1)
+    args = update.message.text.split(" ", maxsplit=2)
     reply_to = update.message.reply_to_message
     link = ''
+    dest = ''
     if len(args) > 1:
         link = args[1]
+        try:
+            dest = args[2]
+        except IndexError:
+            pass
     if reply_to is not None:
-        if len(link) == 0:
-            link = reply_to.text
+        link = reply_to.text
+        if len(args) > 1: 
+            try:
+                dest = args[1]
+            except IndexError:
+                pass
     is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
     if (is_appdrive or is_gdtot):
@@ -59,7 +68,7 @@ def cloneNode(update, context):
         if files <= 20:
             msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update.message)
             LOGGER.info(f"Cloning: {link}")
-            result = gd.clone(link)
+            result = gd.clone(link, dest)
             deleteMessage(context.bot, msg)
         else:
             drive = GoogleDriveHelper(name)
@@ -69,7 +78,7 @@ def cloneNode(update, context):
                 download_dict[update.message.message_id] = clone_status
             sendStatusMessage(update.message, context.bot)
             LOGGER.info(f"Cloning: {link}")
-            result = drive.clone(link)
+            result = drive.clone(link, dest)
             with download_dict_lock:
                 del download_dict[update.message.message_id]
                 count = len(download_dict)

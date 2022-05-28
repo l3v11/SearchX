@@ -11,6 +11,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 def permissionNode(update, context):
     LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
     args = update.message.text.split(" ", maxsplit=2)
+    reply_to = update.message.reply_to_message
     link = ''
     access = ''
     if len(args) > 1:
@@ -18,7 +19,14 @@ def permissionNode(update, context):
         try:
             access = args[2]
         except IndexError:
-            access = "anyone"
+            pass
+    if reply_to is not None:
+        link = reply_to.text
+        if len(args) > 1: 
+            try:
+                access = args[1]
+            except IndexError:
+                pass
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Setting permission:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Setting permission: {link}")

@@ -104,11 +104,10 @@ def unauthorize(update, context):
     sendMessage(msg, context.bot, update.message)
 
 def auth_chats(update, context):
-    users = ''
-    for user in AUTHORIZED_CHATS:
-        users += f"{user}\n"
-    users = users if users != '' else "None"
-    sendMessage(f'<b><u>Authorized Chats</u></b>\n<code>{users}</code>\n', context.bot, update.message)
+    user = ''
+    user += '\n'.join(f"<code>{uid}</code>" for uid in AUTHORIZED_CHATS)
+    msg = f'<b><u>Authorized Chats</u></b>\n\n{user}'
+    sendMessage(msg, context.bot, update.message)
 
 authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
                                    filters=CustomFilters.owner_filter, run_async=True)
