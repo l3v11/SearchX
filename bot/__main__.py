@@ -4,7 +4,7 @@ from psutil import cpu_percent, cpu_count, disk_usage, virtual_memory
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, DEST_KEYS, TELEGRAPH, dispatcher, updater
+from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, DEST_DRIVES, TELEGRAPH, dispatcher, updater
 from bot.modules import auth, cancel, clone, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -25,7 +25,7 @@ def start(update, context):
 
 def listkeys(update, context):
     keys = ''
-    keys += '\n'.join(f"• <code>{key}</code>" for key in DEST_KEYS)
+    keys += '\n'.join(f"• <code>{key}</code>" for key in DEST_DRIVES.keys())
     msg = f"<b><u>Available Keys</u></b>\n{keys}"
     sendMessage(msg, context.bot, update.message)
 

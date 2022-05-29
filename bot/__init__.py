@@ -53,11 +53,10 @@ Interval = []
 DRIVE_NAMES = []
 DRIVE_IDS = []
 INDEX_URLS = []
-DEST_KEYS = []
 TELEGRAPH = []
+DEST_DRIVES = {}
 
 AUTHORIZED_CHATS = set()
-DEST_DRIVES = dict()
 
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
@@ -249,7 +248,6 @@ if os.path.exists('dest_list'):
         for line in lines:
             line = line.strip().split()
             DEST_DRIVES[line[0]] = line[1:]
-            DEST_KEYS.append(line[0].replace("_", " "))
 
 def create_account(sname):
     try:
