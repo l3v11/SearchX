@@ -51,7 +51,7 @@ if choice == 'A' or choice == 'a' or choice == '1':
     elif choice == 'B' or choice == 'b' or choice == '2':
         print("\n\033[1;93mInstructions" \
               "\n------------\033[m" \
-              "\nDrive Name > A name for the drive" \
+              "\nDrive Name > Name of the drive" \
               "\nDrive ID   > ID of the drive" \
               "\nIndex URL  > Index link for the drive (Optional)")
 
@@ -62,12 +62,15 @@ if choice == 'A' or choice == 'a' or choice == '1':
             print(f"\n\033[1;93mDRIVE - {count}\n" \
                   f"----------\033[m")
             name = input("Drive Name > ")
-            id = input("Drive ID   > ")
-            index = input("Index URL  > ")
-            if not name or not id:
-                print("\n\033[1;91mERROR:\033[m Drive Name and/or Drive ID is empty")
+            if not name:
+                print("\n\033[1;91mERROR:\033[m Drive Name cannot be empty")
                 exit(1)
             name = name.replace(" ", "_")
+            id = input("Drive ID   > ")
+            if not id:
+                print("\n\033[1;91mERROR:\033[m Drive ID cannot be empty")
+                exit(1)
+            index = input("Index URL  > ")
             if index:
                 if index[-1] == "/":
                     index = index[:-1]
@@ -90,9 +93,9 @@ if choice == 'A' or choice == 'a' or choice == '1':
 elif choice == 'B' or choice == 'b' or choice == '2':
     print("\n\033[1;93mInstructions" \
           "\n------------\033[m" \
-          "\nDrive Key > A short name for the drive" \
-          "\nDrive ID  > ID of the drive" \
-          "\nIndex URL > Index link for the drive (Optional)")
+          "\nDrive Key  > A random short name for the drive" \
+          "\nDrive ID   > ID of the drive" \
+          "\nIndex URL  > Index link for the drive (Optional)")
 
     num = int(input("\n\033[1;94mTotal number of drives >\033[m "))
     count = 1
@@ -100,13 +103,16 @@ elif choice == 'B' or choice == 'b' or choice == '2':
     while count <= num:
         print(f"\n\033[1;93mDRIVE - {count}\n" \
               f"----------\033[m")
-        key = input("Drive Key > ")
-        id = input("Drive ID  > ")
-        index = input("Index URL > ")
-        if not key or not id:
-            print("\n\033[1;91mERROR:\033[m Drive Key and/or Drive ID is empty")
+        key = input("Drive Key  > ")
+        if not key:
+            print("\n\033[1;91mERROR:\033[m Drive Key cannot be empty")
             exit(1)
         key = key.replace(" ", "_")
+        id = input("Drive ID   > ")
+        if not id:
+            print("\n\033[1;91mERROR:\033[m Drive ID cannot be empty")
+            exit(1)
+        index = input("Index URL  > ")
         if index:
             if index[-1] == "/":
                 index = index[:-1]

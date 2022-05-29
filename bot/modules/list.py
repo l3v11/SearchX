@@ -8,21 +8,26 @@ from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 
 def list_drive(update, context):
     LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
-    try:
-        search = update.message.text.split(' ', maxsplit=1)[1]
-    except IndexError:
+    args = update.message.text.split(" ", maxsplit=1)
+    reply_to = update.message.reply_to_message
+    query = ''
+    if len(args) > 1:
+        query = args[1]
+    if reply_to is not None:
+        query = reply_to.text
+    if query != '':
+        reply = sendMessage(f"<b>Finding:</b> <code>{query}</code>", context.bot, update.message)
+        LOGGER.info(f"Finding: {query}")
+        gd = GoogleDriveHelper()
+        try:
+            msg, button = gd.drive_list(query)
+        except Exception as e:
+            msg, button = "There was an error", None
+            LOGGER.exception(e)
+        editMessage(msg, reply, button)
+    else:
         sendMessage('<b>Send a Query along with command</b>', context.bot, update.message)
-        LOGGER.info("Query: None")
-        return
-    reply = sendMessage('<b>Search in progress...</b>', context.bot, update.message)
-    LOGGER.info(f"Query: {search}")
-    gd = GoogleDriveHelper()
-    try:
-        msg, button = gd.drive_list(search)
-    except Exception as e:
-        msg, button = "There was an error", None
-        LOGGER.exception(e)
-    editMessage(msg, reply, button)
+        LOGGER.info("Finding: None")
 
 list_handler = CommandHandler(BotCommands.ListCommand, list_drive,
                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

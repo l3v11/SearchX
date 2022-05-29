@@ -15,16 +15,16 @@ def shell(update, context):
     cmd = cmd[1]
     process = subprocess.run(cmd, capture_output=True, shell=True)
     reply = ''
-    stderr = process.stderr.decode('utf-8')
     stdout = process.stdout.decode('utf-8')
+    stderr = process.stderr.decode('utf-8')
     if len(stdout) != 0:
         reply += f"<b>Stdout</b>\n<code>{stdout}</code>\n"
     if len(stderr) != 0:
         reply += f"<b>Stderr</b>\n<code>{stderr}</code>\n"
     if len(reply) > 3000:
-        with open('shell_output.txt', 'w') as file:
+        with open('output.txt', 'w') as file:
             file.write(reply)
-        with open('shell_output.txt', 'rb') as doc:
+        with open('output.txt', 'rb') as doc:
             context.bot.send_document(
                 document=doc,
                 filename=doc.name,

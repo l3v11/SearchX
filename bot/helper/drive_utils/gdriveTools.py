@@ -250,7 +250,7 @@ class GoogleDriveHelper:
                 break
         return files
 
-    def clone(self, link, dest):
+    def clone(self, link, key):
         self.start_time = time.time()
         self.total_files = 0
         self.total_folders = 0
@@ -262,10 +262,10 @@ class GoogleDriveHelper:
             msg = "Drive ID not found"
             LOGGER.error(msg)
             return msg
-        if dest in DEST_DRIVES:
-            parent_id = DEST_DRIVES[dest][0]
+        if key in DEST_DRIVES:
+            parent_id = DEST_DRIVES[key][0]
             try:
-                index_url = DEST_DRIVES[dest][1]
+                index_url = DEST_DRIVES[key][1]
             except IndexError:
                 index_url = None
         msg = ""
@@ -314,7 +314,7 @@ class GoogleDriveHelper:
                 token_service = self.alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-                    return self.clone(link, dest)
+                    return self.clone(link, key)
                 msg = "File not found"
             else:
                 msg = str(err)

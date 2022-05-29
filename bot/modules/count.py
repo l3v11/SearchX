@@ -16,8 +16,7 @@ def countNode(update, context):
     if len(args) > 1:
         link = args[1]
     if reply_to is not None:
-        if len(link) == 0:
-            link = reply_to.text
+        link = reply_to.text
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Counting:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Counting: {link}")

@@ -22,11 +22,8 @@ def permissionNode(update, context):
             pass
     if reply_to is not None:
         link = reply_to.text
-        if len(args) > 1: 
-            try:
-                access = args[1]
-            except IndexError:
-                pass
+        if len(args) > 1:
+            access = args[1]
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Setting permission:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Setting permission: {link}")

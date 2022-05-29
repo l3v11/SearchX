@@ -53,7 +53,11 @@ Interval = []
 DRIVE_NAMES = []
 DRIVE_IDS = []
 INDEX_URLS = []
+DEST_KEYS = []
 TELEGRAPH = []
+
+AUTHORIZED_CHATS = set()
+DEST_DRIVES = dict()
 
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
@@ -64,7 +68,6 @@ download_dict = {}
 # Value: telegram.Message
 status_reply_dict = {}
 
-AUTHORIZED_CHATS = set()
 try:
     users = get_config('AUTHORIZED_CHATS')
     users = users.split(" ")
@@ -240,16 +243,13 @@ if os.path.exists('drive_list'):
             except IndexError:
                 INDEX_URLS.append(None)
 
-DEST_DRIVES = dict()
-keys = ''
 if os.path.exists('dest_list'):
     with open('dest_list', 'r+') as f:
         lines = f.readlines()
         for line in lines:
             line = line.strip().split()
             DEST_DRIVES[line[0]] = line[1:]
-            keys += f'<code>{line[0]}</code>, '
-    keys = keys[:-2]
+            DEST_KEYS.append(line[0].replace("_", " "))
 
 def create_account(sname):
     try:
