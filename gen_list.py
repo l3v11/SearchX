@@ -4,26 +4,26 @@ import subprocess
 import time
 
 print("\nGenerate a file from the below list")
-print("\n\t\033[1;95mA.\033[m drive_list")
-print("\t\033[1;95mB.\033[m dest_list")
+print("\n\tA. drive_list")
+print("\tB. dest_list")
 
-choice = input("\nChoose either \033[1;95mA\033[m or \033[1;95mB\033[m > ")
+choice = input("\nChoose either A or B > ")
 
-if choice == 'A' or choice == 'a' or choice == '1':
-    print("\nGenerate the \033[1;96mdrive_list\033[m file with the below methods")
-    print("\n\t\033[1;95mA.\033[m All Drives (automatic)")
-    print("\t\033[1;95mB.\033[m Selected Drives (manual)")
+if choice in ['A', 'a', '1']:
+    print("\nGenerate the drive_list file with the below methods")
+    print("\n\tA. All Drives (automatic)")
+    print("\tB. Selected Drives (manual)")
 
-    choice = input("\nChoose either \033[1;95mA\033[m or \033[1;95mB\033[m > ")
+    choice = input("\nChoose either A or B > ")
 
-    if choice == 'A' or choice == 'a' or choice == '1':
-        input("\n\033[1;95mNOTICE:\033[m Make sure Rclone is installed on your system PATH variable and Google Drive remote is configured properly\n\nPress ENTER to continue")
+    if choice in ['A', 'a', '1']:
+        input("\nNOTICE: Make sure Rclone is installed on your system PATH variable and Google Drive remote is configured properly\n\nPress ENTER to continue")
 
-        print("\n\033[1;93mList of remotes")
-        print("---------------\033[m")
+        print("\nList of remotes")
+        print("---------------")
         subprocess.run(['rclone', 'listremotes', '--long'])
 
-        remote = input("\n\033[1;94mEnter a drive remote >\033[m ")
+        remote = input("\nEnter a drive remote > ")
 
         print("\nProcessing all drives")
 
@@ -45,30 +45,29 @@ if choice == 'A' or choice == 'a' or choice == '1':
         time.sleep(2)
 
         os.remove('drives.txt')
-        print(f"\nGenerated \033[1;96mdrive_list\033[m file with \033[1;96m{len(lines)}\033[m drives")
+        print(f"\nGenerated the drive_list file with {len(lines)} drives")
         exit()
 
-    elif choice == 'B' or choice == 'b' or choice == '2':
-        print("\n\033[1;93mInstructions" \
-              "\n------------\033[m" \
+    elif choice in ['B', 'b', '2']:
+        print("\nInstructions" \
+              "\n------------" \
               "\nDrive Name > Name of the drive" \
               "\nDrive ID   > ID of the drive" \
               "\nIndex URL  > Index link for the drive (Optional)")
 
-        num = int(input("\n\033[1;94mTotal number of drives >\033[m "))
-        count = 1
+        num = int(input("\nTotal number of drives > "))
         msg = ''
-        while count <= num:
-            print(f"\n\033[1;93mDRIVE - {count}\n" \
-                  f"----------\033[m")
+        for count in range(1, num + 1):
+            print(f"\nDRIVE - {count}\n" \
+                  f"----------")
             name = input("Drive Name > ")
             if not name:
-                print("\n\033[1;91mERROR:\033[m Drive Name cannot be empty")
+                print("\nERROR: Drive Name cannot be empty")
                 exit(1)
             name = name.replace(" ", "_")
             id = input("Drive ID   > ")
             if not id:
-                print("\n\033[1;91mERROR:\033[m Drive ID cannot be empty")
+                print("\nERROR: Drive ID cannot be empty")
                 exit(1)
             index = input("Index URL  > ")
             if index:
@@ -76,41 +75,39 @@ if choice == 'A' or choice == 'a' or choice == '1':
                     index = index[:-1]
             else:
                 index = ''
-            count += 1
             msg += f"{name} {id} {index}\n"
 
         with open('drive_list', 'w') as f:
             f.truncate(0)
             f.write(msg)
 
-        print(f"\nGenerated \033[1;96mdrive_list\033[m file with \033[1;96m{num}\033[m drives")
+        print(f"\nGenerated the drive_list file with {num} drives")
         exit()
 
     else:
-        print("\n\033[1;91mERROR:\033[m Wrong input")
+        print("\nERROR: Wrong input")
         exit(1)
 
-elif choice == 'B' or choice == 'b' or choice == '2':
-    print("\n\033[1;93mInstructions" \
-          "\n------------\033[m" \
+elif choice in ['B', 'b', '2']:
+    print("\nInstructions" \
+          "\n------------" \
           "\nDrive Key  > A random short name for the drive" \
           "\nDrive ID   > ID of the drive" \
           "\nIndex URL  > Index link for the drive (Optional)")
 
-    num = int(input("\n\033[1;94mTotal number of drives >\033[m "))
-    count = 1
+    num = int(input("\nTotal number of drives > "))
     msg = ''
-    while count <= num:
-        print(f"\n\033[1;93mDRIVE - {count}\n" \
-              f"----------\033[m")
+    for count in range(1, num + 1):
+        print(f"\nDRIVE - {count}\n" \
+              f"----------")
         key = input("Drive Key  > ")
         if not key:
-            print("\n\033[1;91mERROR:\033[m Drive Key cannot be empty")
+            print("\nERROR: Drive Key cannot be empty")
             exit(1)
         key = key.replace(" ", "_")
         id = input("Drive ID   > ")
         if not id:
-            print("\n\033[1;91mERROR:\033[m Drive ID cannot be empty")
+            print("\nERROR: Drive ID cannot be empty")
             exit(1)
         index = input("Index URL  > ")
         if index:
@@ -118,16 +115,15 @@ elif choice == 'B' or choice == 'b' or choice == '2':
                 index = index[:-1]
         else:
             index = ''
-        count += 1
         msg += f"{key} {id} {index}\n"
 
     with open('dest_list', 'w') as f:
         f.truncate(0)
         f.write(msg)
 
-    print(f"\nGenerated \033[1;96mdest_list\033[m file with \033[1;96m{num}\033[m drives")
+    print(f"\nGenerated the dest_list file with {num} drives")
     exit()
 
 else:
-    print("\n\033[1;91mERROR:\033[m Wrong input")
+    print("\nERROR: Wrong input")
     exit(1)

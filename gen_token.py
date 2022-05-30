@@ -14,7 +14,7 @@ creds = None
 # time.
 if os.path.exists('token.json'):
     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    print("\n\033[1;96mtoken.json\033[m file exists")
+    print("\nThe token.json file exists")
 
 # If the file token.pickle exists and token.json doesn't exist, then
 # let it be converted to token.json
@@ -23,7 +23,7 @@ if not os.path.exists('token.json') and os.path.exists('token.pickle'):
         creds = pickle.load(f)
     with open('token.json', 'w') as token:
         token.write(creds.to_json())
-    print("\nConverted \033[1;94mtoken.pickle\033[m file to \033[1;96mtoken.json\033[m")
+    print("\nConverted the token.pickle file to token.json")
 
 # If there are no (valid) credentials available, let the user log in.
 if not creds or not creds.valid:
@@ -36,4 +36,4 @@ if not creds or not creds.valid:
     # Save the credentials for the next run
     with open('token.json', 'w') as token:
         token.write(creds.to_json())
-    print("\nGenerated \033[1;96mtoken.json\033[m file")
+    print("\nGenerated the token.json file")
