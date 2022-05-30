@@ -14,6 +14,7 @@ from tenacity import retry, wait_exponential, stop_after_attempt, \
 from telegram import InlineKeyboardMarkup
 from telegraph.exceptions import RetryAfterError
 
+from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -66,8 +67,10 @@ class GoogleDriveHelper:
         if not USE_SERVICE_ACCOUNTS:
             if os.path.exists('token.json'):
                 creds = Credentials.from_authorized_user_file('token.json', self.__OAUTH_SCOPE)
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
             else:
-                LOGGER.error("token.json file is missing")
+                LOGGER.error("The token.json file is missing")
         else:
             LOGGER.info(f"Authorizing with {SERVICE_ACCOUNT_INDEX}.json file")
             creds = service_account.Credentials.from_service_account_file(
@@ -81,7 +84,11 @@ class GoogleDriveHelper:
             if os.path.exists('token.json'):
                 LOGGER.info("Authorizing with token.json file")
                 creds = Credentials.from_authorized_user_file('token.json', self.__OAUTH_SCOPE)
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
                 return build('drive', 'v3', credentials=creds, cache_discovery=False)
+            else:
+                LOGGER.error("The token.json file is missing")
         return None
 
     @staticmethod
@@ -274,7 +281,7 @@ class GoogleDriveHelper:
             name = meta.get("name")
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.create_directory(meta.get('name'), PARENT_ID)
+                dir_id = self.create_directory(meta.get('name'), parent_id)
                 self.cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.is_cancelled:
@@ -292,7 +299,7 @@ class GoogleDriveHelper:
                     url = f'{index_url}/{url_path}/'
                     msg += f'<b> | <a href="{url}">Index Link</a></b>'
             else:
-                file = self.copyFile(meta.get('id'), PARENT_ID)
+                file = self.copyFile(meta.get('id'), parent_id)
                 msg += f'<b>Name:</b> <code>{file.get("name")}</code>'
                 if mime_type is None:
                     mime_type = 'File'
