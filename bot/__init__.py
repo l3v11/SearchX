@@ -94,6 +94,14 @@ except:
     exit(1)
 
 try:
+    DOWNLOAD_DIR = get_config('DOWNLOAD_DIR')
+    if not DOWNLOAD_DIR.endswith("/"):
+        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+except:
+    LOGGER.error("DOWNLOAD_DIR env variable is missing")
+    exit(1)
+
+try:
     DATABASE_URL = get_config('DATABASE_URL')
     if len(DATABASE_URL) == 0:
         raise KeyError
@@ -142,6 +150,14 @@ try:
     CLONE_LIMIT = float(CLONE_LIMIT)
 except:
     CLONE_LIMIT = None
+
+try:
+    COMPRESS_LIMIT = get_config('COMPRESS_LIMIT')
+    if len(COMPRESS_LIMIT) == 0:
+        raise KeyError
+    COMPRESS_LIMIT = float(COMPRESS_LIMIT)
+except:
+    COMPRESS_LIMIT = None
 
 try:
     TOKEN_JSON_URL = get_config('TOKEN_JSON_URL')

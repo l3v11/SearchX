@@ -9,7 +9,6 @@ from bot.helper.telegram_helper.filters import CustomFilters
 
 @new_thread
 def deleteNode(update, context):
-    LOGGER.info(f"User: {update.message.from_user.first_name} [{update.message.from_user.id}]")
     args = update.message.text.split(" ", maxsplit=1)
     reply_to = update.message.reply_to_message
     link = ''
@@ -26,7 +25,6 @@ def deleteNode(update, context):
         sendMessage(result, context.bot, update.message)
     else:
         sendMessage("<b>Send a Drive link along with command</b>", context.bot, update.message)
-        LOGGER.info("Deleting: None")
 
 delete_handler = CommandHandler(BotCommands.DeleteCommand, deleteNode,
                                 filters=CustomFilters.owner_filter, run_async=True)

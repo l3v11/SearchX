@@ -3,12 +3,21 @@ import threading
 import time
 
 from html import escape
-from psutil import virtual_memory, cpu_percent
+from psutil import virtual_memory, cpu_percent, disk_usage
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import botStartTime, download_dict, download_dict_lock
+from bot import botStartTime, DOWNLOAD_DIR, download_dict, download_dict_lock
 
-SIZE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+
+URL_REGEX = r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'
+
+class TaskStatus:
+    STATUS_UPLOADING = "Uploading...📤"
+    STATUS_DOWNLOADING = "Downloading...📥"
+    STATUS_CLONING = "Cloning...♻️"
+    STATUS_ARCHIVING = "Archiving...🔐"
+    STATUS_EXTRACTING = "Extracting...📂"
 
 class SetInterval:
     def __init__(self, interval, action):
@@ -30,8 +39,11 @@ class SetInterval:
 def getDownloadByGid(gid):
     with download_dict_lock:
         for dl in list(download_dict.values()):
-            if dl.gid() == gid:
-                return dl
+            status = dl.status()
+            if status not in [TaskStatus.STATUS_ARCHIVING,
+                              TaskStatus.STATUS_EXTRACTING]:
+                if dl.gid() == gid:
+                    return dl
     return None
 
 def get_progress_bar_string(status):
@@ -42,7 +54,7 @@ def get_progress_bar_string(status):
     cFull = p // 8
     p_str = '⬤' * cFull
     p_str += '○' * (12 - cFull)
-    p_str = f"[{p_str}]"
+    p_str = f"「{p_str}」"
     return p_str
 
 def get_readable_message():
@@ -50,16 +62,43 @@ def get_readable_message():
         msg = ""
         for download in list(download_dict.values()):
             msg += f"<b>Name:</b> <code>{escape(str(download.name()))}</code>"
-            msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
-            msg += f"\n<b>Size:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-            msg += f"\n<b>Transfers:</b> {download.processed_files()} / {download.files()}"
-            msg += f"\n<b>Speed:</b> {download.speed()}"
-            msg += f"\n<b>ETA:</b> {download.eta()}"
-            msg += f"\n<code>/{BotCommands.CancelCommand} {download.gid()}</code>"
+            msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
+            if download.status() not in [TaskStatus.STATUS_ARCHIVING,
+                                         TaskStatus.STATUS_EXTRACTING]:
+                msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
+                if download.status() == TaskStatus.STATUS_CLONING:
+                    msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+                    msg += f"\n<b>Transfers:</b> {download.processed_files()} / {download.files()}"
+                elif download.status() == TaskStatus.STATUS_UPLOADING:
+                    msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+                else:
+                    msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+                msg += f"\n<b>Speed:</b> {download.speed()} | <b>ETA:</b> {download.eta()}"
+                msg += f"\n<code>/{BotCommands.CancelCommand} {download.gid()}</code>"
+            else:
+                msg += f"\n<b>Size: </b>{download.size()}"
             msg += "\n\n"
-        sysmsg = "━━━━━━━━━━━━━━━"
-        sysmsg += f"\n<b>CPU:</b> {cpu_percent()}% | <b>RAM:</b> {virtual_memory().percent}%"
-        sysmsg += f"\n<b>UPTIME:</b> {get_readable_time(time.time() - botStartTime)}"
+        cpu = cpu_percent(interval=0.5)
+        ram = virtual_memory().percent
+        disk = disk_usage('/').percent
+        uptime = get_readable_time(time.time() - botStartTime)
+        sysmsg = f"<b>CPU:</b> {cpu}% | <b>RAM:</b> {ram}%"
+        sysmsg += f"\n<b>DISK:</b> {disk}% | <b>UPTIME:</b> {uptime}"
+        dlspeed_bytes = 0
+        upspeed_bytes = 0
+        for download in list(download_dict.values()):
+            spd = download.speed()
+            if download.status() == TaskStatus.STATUS_DOWNLOADING:
+                if 'KB/s' in spd:
+                    dlspeed_bytes += float(spd.split('K')[0]) * 1024
+                elif 'MB/s' in spd:
+                    dlspeed_bytes += float(spd.split('M')[0]) * 1048576
+            elif download.status() == TaskStatus.STATUS_UPLOADING:
+                if 'KB/s' in spd:
+                    upspeed_bytes += float(spd.split('K')[0]) * 1024
+                elif 'MB/s' in spd:
+                    upspeed_bytes += float(spd.split('M')[0]) * 1048576
+        sysmsg += f"\n<b>DL:</b> {get_readable_file_size(dlspeed_bytes)}/s | <b>UL:</b> {get_readable_file_size(upspeed_bytes)}/s"
         return msg + sysmsg
 
 def get_readable_file_size(size_in_bytes) -> str:
@@ -91,6 +130,10 @@ def get_readable_time(seconds: int) -> str:
     seconds = int(seconds)
     result += f'{seconds}s'
     return result
+
+def is_url(url: str):
+    url = re.findall(URL_REGEX, url)
+    return bool(url)
 
 def is_gdrive_link(url: str):
     return "drive.google.com" in url

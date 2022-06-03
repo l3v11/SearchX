@@ -1,2 +1,5 @@
-class ExceptionHandler(Exception):
+class CompressExceptionHandler(Exception):
+    pass
+
+class DDLExceptionHandler(Exception):
     pass

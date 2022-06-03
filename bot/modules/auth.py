@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler
 
-from bot import AUTHORIZED_CHATS, DATABASE_URL, dispatcher
+from bot import dispatcher, AUTHORIZED_CHATS, DATABASE_URL
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage

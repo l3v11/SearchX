@@ -3,6 +3,8 @@ class _BotCommands:
         self.StartCommand = 'start'
         self.ListCommand = 'find'
         self.CloneCommand = 'clone'
+        self.ArchiveCommand = 'archive'
+        self.ExtractCommand = 'extract'
         self.CountCommand = 'count'
         self.CancelCommand = 'cancel'
         self.StatusCommand = 'status'

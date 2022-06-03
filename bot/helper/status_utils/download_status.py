@@ -1,15 +1,19 @@
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
+from bot import DOWNLOAD_DIR
+from bot.helper.ext_utils.bot_utils import TaskStatus, get_readable_file_size, get_readable_time
 
-class CloneStatus:
-    def __init__(self, obj, size, files, message, gid):
+class DownloadStatus:
+    def __init__(self, obj, size, listener, gid):
         self.__obj = obj
         self.__size = size
-        self.__files = files
-        self.message = message
+        self.__uid = listener.uid
+        self.message = listener.message
         self.__gid = gid
 
+    def path(self):
+        return f"{DOWNLOAD_DIR}{self.__uid}"
+
     def processed_bytes(self):
-        return self.__obj.transferred_size
+        return self.__obj.downloaded_bytes
 
     def size_raw(self):
         return self.__size
@@ -17,21 +21,18 @@ class CloneStatus:
     def size(self):
         return get_readable_file_size(self.__size)
 
+    def status(self):
+        return TaskStatus.STATUS_DOWNLOADING
+
     def name(self):
         return self.__obj.name
-
-    def files(self):
-        return self.__files
-
-    def processed_files(self):
-        return self.__obj.total_files
 
     def gid(self) -> str:
         return self.__gid
 
     def progress_raw(self):
         try:
-            return self.__obj.transferred_size / self.__size * 100
+            return self.__obj.downloaded_bytes / self.__size * 100
         except ZeroDivisionError:
             return 0
 
@@ -42,14 +43,14 @@ class CloneStatus:
         """
         :return: Download speed in Bytes/Seconds
         """
-        return self.__obj.cspeed()
+        return self.__obj.dspeed()
 
     def speed(self):
         return f'{get_readable_file_size(self.speed_raw())}/s'
 
     def eta(self):
         try:
-            seconds = (self.__size - self.__obj.transferred_size) / self.speed_raw()
+            seconds = (self.__size - self.__obj.downloaded_bytes) / self.speed_raw()
             return f'{get_readable_time(seconds)}'
         except ZeroDivisionError:
             return '-'
