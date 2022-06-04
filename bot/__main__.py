@@ -74,11 +74,11 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Find data on Google Drive
 <br><br>
-• <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;key&gt;: Copy data from Google Drive, AppDrive, DriveApp and GDToT (Key optional)
+• <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;key&gt;: Copy data from Google Drive, AppDrive and GDToT (Key optional)
 <br><br>
-• <b>/{BotCommands.ArchiveCommand}</b>: Archive data from Google Drive, AppDrive, DriveApp and GDToT
+• <b>/{BotCommands.ArchiveCommand}</b>: Archive data from Google Drive, AppDrive and GDToT
 <br><br>
-• <b>/{BotCommands.ExtractCommand}</b>: Extract data from Google Drive, AppDrive, DriveApp and GDToT
+• <b>/{BotCommands.ExtractCommand}</b>: Extract data from Google Drive, AppDrive and GDToT
 <br><br>
 • <b>/{BotCommands.CountCommand}</b> &lt;drive_url&gt;: Count data from Google Drive
 <br><br>

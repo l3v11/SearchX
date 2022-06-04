@@ -9,7 +9,7 @@
 
 ## SearchX
 
-> A simple Telegram Bot for searching data on Google Drive. Able to clone data from Google Drive, AppDrive, DriveApp and GDToT links. Supports MongoDB for storing authorized users record.
+> A simple Telegram Bot for searching data on Google Drive. Able to clone data from Google Drive, AppDrive and GDToT. Supports MongoDB for storing authorized users record.
 
 </p>
 

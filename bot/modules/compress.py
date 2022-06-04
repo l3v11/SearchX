@@ -216,7 +216,7 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
         threading.Thread(target=add_gd_download, args=(link, listener, is_appdrive, appdict, is_gdtot)).start()
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
-        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• DriveApp\n• GDToT'
+        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
         help_msg += '\n\n<b><u>Set Password</u></b>\nAdd "<code>pswd: xxx</code>" after the link'
         sendMessage(help_msg, bot, message)
 

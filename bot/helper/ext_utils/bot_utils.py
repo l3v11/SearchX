@@ -139,7 +139,7 @@ def is_gdrive_link(url: str):
     return "drive.google.com" in url
 
 def is_appdrive_link(url: str):
-    url = re.match(r'https?://(appdrive|driveapp)\.in/\S+', url)
+    url = re.match(r'https?://appdrive\.in/\S+', url)
     return bool(url)
 
 def is_gdtot_link(url: str):

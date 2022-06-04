@@ -100,7 +100,7 @@ def cloneNode(update, context):
             gd.deleteFile(link)
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
-        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• DriveApp\n• GDToT'
+        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
         help_msg += '\n\n<b><u>Set Destination Drive</u></b>\nAdd &lt;key&gt; after the link'
         sendMessage(help_msg, context.bot, update.message)
 
