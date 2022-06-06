@@ -1,14 +1,16 @@
+import os
 import signal
 import time
 
 from psutil import cpu_percent, cpu_count, disk_usage, virtual_memory, net_io_counters
+from sys import executable
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, botStartTime, AUTHORIZED_CHATS, DEST_DRIVES, TELEGRAPH, dispatcher, updater
+from bot import bot, LOGGER, botStartTime, AUTHORIZED_CHATS, DEST_DRIVES, TELEGRAPH, Interval, dispatcher, updater
 from bot.modules import auth, cancel, clone, compress, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
-from bot.helper.ext_utils.fs_utils import start_cleanup, exit_clean_up
+from bot.helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_builder import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -61,6 +63,16 @@ def stats(update, context):
 def log(update, context):
     sendLogFile(context.bot, update.message)
 
+def restart(update, context):
+    restart_message = sendMessage("<b>Restart in progress...</b>", context.bot, update.message)
+    if Interval:
+        Interval[0].cancel()
+    clean_all()
+    with open(".restartmsg", "w") as f:
+        f.truncate(0)
+        f.write(f"{restart_message.chat.id}\n{restart_message.message_id}\n")
+    os.execl(executable, executable, "-m", "bot")
+
 help_string = '''
 <b><a href='https://github.com/l3v11/SearchX'>SearchX</a></b> - The Ultimate Telegram Bot for Google Drive
 
@@ -72,13 +84,13 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.StartCommand}</b>: Start the bot
 <br><br>
-• <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Find data on Google Drive
+• <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Search data on Google Drive
 <br><br>
 • <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;key&gt;: Copy data from Google Drive, AppDrive and GDToT (Key optional)
 <br><br>
-• <b>/{BotCommands.ArchiveCommand}</b>: Archive data from Google Drive, AppDrive and GDToT
+• <b>/{BotCommands.ArchiveCommand}</b> &lt;url&gt;: Archive data from Google Drive, AppDrive and GDToT
 <br><br>
-• <b>/{BotCommands.ExtractCommand}</b>: Extract data from Google Drive, AppDrive and GDToT
+• <b>/{BotCommands.ExtractCommand}</b> &lt;url&gt;: Extract data from Google Drive, AppDrive and GDToT
 <br><br>
 • <b>/{BotCommands.CountCommand}</b> &lt;drive_url&gt;: Count data from Google Drive
 <br><br>
@@ -119,6 +131,8 @@ help_string_admin = f'''
 • <b>/{BotCommands.ExecHelpCommand}</b>: Get help about executor
 <br><br>
 • <b>/{BotCommands.LogCommand}</b>: Get the log file
+<br><br>
+• <b>/{BotCommands.RestartCommand}</b>: Restart the bot
 '''
 
 help_admin = TELEGRAPH[0].create_page(
@@ -135,6 +149,11 @@ def bot_help(update, context):
 
 def main():
     start_cleanup()
+    if os.path.isfile(".restartmsg"):
+        with open(".restartmsg") as f:
+            chat_id, msg_id = map(int, f)
+        bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTMl')
+        os.remove(".restartmsg")
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
     keys_handler = CommandHandler(BotCommands.ListKeysCommand, listkeys,
@@ -145,6 +164,8 @@ def main():
                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
                                  filters=CustomFilters.owner_filter, run_async=True)
+    restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
+                                     filters=CustomFilters.owner_filter, run_async=True)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     dispatcher.add_handler(start_handler)
@@ -152,6 +173,7 @@ def main():
     dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(log_handler)
+    dispatcher.add_handler(restart_handler)
     dispatcher.add_handler(help_handler)
     updater.start_polling()
     LOGGER.info("Bot started")

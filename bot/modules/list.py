@@ -15,13 +15,13 @@ def list_drive(update, context):
     if reply_to is not None:
         query = reply_to.text
     if query != '':
-        reply = sendMessage(f"<b>Finding:</b> <code>{query}</code>", context.bot, update.message)
+        reply = sendMessage(f"<b>Search in progress...</b>", context.bot, update.message)
         LOGGER.info(f"Finding: {query}")
         gd = GoogleDriveHelper()
         try:
             msg, button = gd.drive_list(query)
         except Exception as e:
-            msg, button = "There was an error", None
+            msg, button = "Internal error", None
             LOGGER.exception(e)
         editMessage(msg, reply, button)
     else:
