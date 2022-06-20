@@ -31,7 +31,7 @@ if choice in ['A', 'a', '1']:
             subprocess.run(['rclone', 'backend', 'drives', f'{remote}'], stdout=drives)
 
         msg = ''
-        with open('drives.txt', 'r+') as f1:
+        with open('drives.txt', 'r+', encoding='utf8') as f1:
             lines = json.loads(f1.read())
             for count, item in enumerate(lines, 1):
                 id = item['id']
@@ -39,7 +39,7 @@ if choice in ['A', 'a', '1']:
                 msg += f'{name} {id}\n'
         time.sleep(2)
 
-        with open('drive_list', 'w') as f2:
+        with open('drive_list', 'w', encoding='utf8') as f2:
             f2.truncate(0)
             f2.write(msg)
         time.sleep(2)
