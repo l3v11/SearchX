@@ -69,9 +69,9 @@ status_reply_dict = {}
 
 try:
     users = get_config('AUTHORIZED_CHATS')
-    users = users.split(" ")
+    users = users.split()
     for user in users:
-        AUTHORIZED_CHATS.add(int(user))
+        AUTHORIZED_CHATS.add(int(user.strip()))
 except:
     pass
 

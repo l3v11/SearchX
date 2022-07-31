@@ -9,27 +9,27 @@ from bot.helper.telegram_helper.filters import CustomFilters
 
 @new_thread
 def permissionNode(update, context):
-    args = update.message.text.split(" ", maxsplit=2)
+    args = update.message.text.split()
     reply_to = update.message.reply_to_message
     link = ''
     access = ''
     if len(args) > 1:
-        link = args[1]
+        link = args[1].strip()
         try:
-            access = args[2]
+            access = args[2].strip()
         except IndexError:
             pass
-    if reply_to is not None:
-        link = reply_to.text
+    if reply_to:
+        link = reply_to.text.split(maxsplit=1)[0].strip()
         try:
-            access = args[1]
+            access = args[1].strip()
         except IndexError:
             pass
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Setting permission:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Setting permission: {link}")
         gd = GoogleDriveHelper()
-        result = gd.setPerm(link, access)
+        result = gd.setPermission(link, access)
         deleteMessage(context.bot, msg)
         sendMessage(result, context.bot, update.message)
     else:

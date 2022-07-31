@@ -67,6 +67,7 @@ def restart(update, context):
     restart_message = sendMessage("<b>Restart in progress...</b>", context.bot, update.message)
     if Interval:
         Interval[0].cancel()
+        Interval.clear()
     clean_all()
     with open(".restartmsg", "w") as f:
         f.truncate(0)

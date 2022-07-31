@@ -13,9 +13,9 @@ SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 URL_REGEX = r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'
 
 class TaskStatus:
-    STATUS_UPLOADING = "Uploading...📤"
-    STATUS_DOWNLOADING = "Downloading...📥"
     STATUS_CLONING = "Cloning...♻️"
+    STATUS_DOWNLOADING = "Downloading...📥"
+    STATUS_UPLOADING = "Uploading...📤"
     STATUS_ARCHIVING = "Archiving...🔐"
     STATUS_EXTRACTING = "Extracting...📂"
 
@@ -39,11 +39,8 @@ class SetInterval:
 def getDownloadByGid(gid):
     with download_dict_lock:
         for dl in list(download_dict.values()):
-            status = dl.status()
-            if status not in [TaskStatus.STATUS_ARCHIVING,
-                              TaskStatus.STATUS_EXTRACTING]:
-                if dl.gid() == gid:
-                    return dl
+            if dl.gid() == gid:
+                return dl
     return None
 
 def get_progress_bar_string(status):
@@ -63,21 +60,23 @@ def get_readable_message():
         for download in list(download_dict.values()):
             msg += f"<b>Name:</b> <code>{escape(str(download.name()))}</code>"
             msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
-            if download.status() not in [TaskStatus.STATUS_ARCHIVING,
-                                         TaskStatus.STATUS_EXTRACTING]:
-                msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
-                if download.status() == TaskStatus.STATUS_CLONING:
-                    msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-                    msg += f"\n<b>Transfers:</b> {download.processed_files()} / {download.files()}"
-                elif download.status() == TaskStatus.STATUS_UPLOADING:
-                    msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-                else:
-                    msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-                msg += f"\n<b>Speed:</b> {download.speed()} | <b>ETA:</b> {download.eta()}"
-                msg += f"\n<code>/{BotCommands.CancelCommand} {download.gid()}</code>"
-            else:
-                msg += f"\n<b>Size: </b>{download.size()}"
+            msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
+            if download.status() == TaskStatus.STATUS_CLONING:
+                msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+                msg += f"\n<b>Transfers:</b> {download.processed_files()} / {download.files()}"
+            elif download.status() == TaskStatus.STATUS_DOWNLOADING:
+                msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+            elif download.status() == TaskStatus.STATUS_UPLOADING:
+                msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+            elif download.status() == TaskStatus.STATUS_ARCHIVING:
+                msg += f"\n<b>Archived:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+            elif download.status() == TaskStatus.STATUS_EXTRACTING:
+                msg += f"\n<b>Extracted:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+            msg += f"\n<b>Speed:</b> {download.speed()} | <b>ETA:</b> {download.eta()}"
+            msg += f"\n<code>/{BotCommands.CancelCommand} {download.gid()}</code>"
             msg += "\n\n"
+        if len(msg) == 0:
+            return None
         cpu = cpu_percent(interval=0.5)
         ram = virtual_memory().percent
         disk = disk_usage('/').percent

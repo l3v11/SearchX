@@ -6,7 +6,6 @@ import subprocess
 import threading
 
 from html import escape
-from pathlib import PurePath
 from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher, DOWNLOAD_DIR, Interval, INDEX_URL, download_dict, download_dict_lock
@@ -31,13 +30,14 @@ class CompressListener:
         self.is_archive = is_archive
         self.is_extract = is_extract
         self.pswd = pswd
+        self.suproc = None
 
     def clean(self):
         try:
             Interval[0].cancel()
-            del Interval[0]
+            Interval.clear()
             delete_all_messages()
-        except IndexError:
+        except:
             pass
 
     def onDownloadComplete(self):
@@ -45,33 +45,35 @@ class CompressListener:
             download = download_dict[self.uid]
             name = str(download.name()).replace('/', '')
             gid = download.gid()
-            size = download.size_raw()
             m_path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+        size = get_path_size(m_path)
         if self.is_archive:
-            try:
-                with download_dict_lock:
-                    download_dict[self.uid] = ArchiveStatus(name, m_path, size)
-                path = m_path + ".zip"
-                LOGGER.info(f"Archiving: {name}")
-                if self.pswd is not None:
-                    subprocess.run(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
-                else:
-                    subprocess.run(["7z", "a", "-mx=0", path, m_path])
-            except FileNotFoundError:
-                LOGGER.info("File to archive not found")
-                self.onUploadError('Internal error')
+            path = m_path + ".zip"
+            with download_dict_lock:
+                download_dict[self.uid] = ArchiveStatus(name, size, gid, self)
+            LOGGER.info(f"Archiving: {name}")
+            if self.pswd is not None:
+                self.suproc = subprocess.Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
+            else:
+                self.suproc = subprocess.Popen(["7z", "a", "-mx=0", path, m_path])
+            self.suproc.wait()
+            if self.suproc.returncode == -9:
                 return
-            try:
-                shutil.rmtree(m_path)
-            except:
-                os.remove(m_path)
+            elif self.suproc.returncode != 0:
+                LOGGER.error("Failed to archive the data")
+                path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+            if self.suproc.returncode == 0:
+                try:
+                    shutil.rmtree(m_path)
+                except:
+                    os.remove(m_path)
         elif self.is_extract:
             try:
                 if os.path.isfile(m_path):
                     path = get_base_name(m_path)
                 LOGGER.info(f"Extracting: {name}")
                 with download_dict_lock:
-                    download_dict[self.uid] = ExtractStatus(name, m_path, size)
+                    download_dict[self.uid] = ExtractStatus(name, size, gid, self)
                 if os.path.isdir(m_path):
                     for dirpath, subdir, files in os.walk(m_path, topdown=False):
                         for file_ in files:
@@ -79,22 +81,30 @@ class CompressListener:
                                or (file_.endswith(".rar") and not re.search(r'\.part\d+\.rar$', file_)):
                                 m_path = os.path.join(dirpath, file_)
                                 if self.pswd is not None:
-                                    result = subprocess.run(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
+                                    self.suproc = subprocess.Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
                                 else:
-                                    result = subprocess.run(["7z", "x", m_path, f"-o{dirpath}", "-aot"])
-                                if result.returncode != 0:
+                                    self.suproc = subprocess.Popen(["7z", "x", m_path, f"-o{dirpath}", "-aot"])
+                                self.suproc.wait()
+                                if self.suproc.returncode == -9:
+                                    return
+                                elif self.suproc.returncode != 0:
                                     LOGGER.error("Failed to extract the archive")
-                        for file_ in files:
-                            if file_.endswith((".rar", ".zip", ".7z")) or re.search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
-                                del_path = os.path.join(dirpath, file_)
-                                os.remove(del_path)
+                        if self.suproc.returncode == 0:
+                            for file_ in files:
+                                if file_.endswith((".rar", ".zip", ".7z")) or \
+                                    re.search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
+                                    del_path = os.path.join(dirpath, file_)
+                                    os.remove(del_path)
                     path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
                 else:
                     if self.pswd is not None:
-                        result = subprocess.run(["bash", "pextract", m_path, self.pswd])
+                        self.suproc = subprocess.Popen(["bash", "pextract", m_path, self.pswd])
                     else:
-                        result = subprocess.run(["bash", "extract", m_path])
-                    if result.returncode == 0:
+                        self.suproc = subprocess.Popen(["bash", "extract", m_path])
+                    self.suproc.wait()
+                    if self.suproc.returncode == -9:
+                        return
+                    elif self.suproc.returncode == 0:
                         os.remove(m_path)
                     else:
                         LOGGER.error("Failed to extract the archive")
@@ -104,7 +114,7 @@ class CompressListener:
                 path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
         else:
             path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
-        up_name = PurePath(path).name
+        up_name = path.rsplit('/', 1)[-1]
         up_path = f'{DOWNLOAD_DIR}{self.uid}/{up_name}'
         size = get_path_size(up_path)
         LOGGER.info(f"Uploading: {up_name}")
@@ -176,25 +186,24 @@ class CompressListener:
 
 def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
     mesg = message.text.split('\n')
-    message_args = mesg[0].split(" ", maxsplit=1)
+    message_args = mesg[0].split(maxsplit=1)
     reply_to = message.reply_to_message
     is_appdrive = False
     is_gdtot = False
     appdict = ''
-    try:
-        link = message_args[1]
-        if link.startswith("pswd: "):
-            raise IndexError
-    except:
+    if len(message_args) > 1:
+        link = message_args[1].strip()
+        if link.startswith("pswd:"):
+            link = ''
+    else:
         link = ''
-    link = re.split(r"pswd:| \|", link)[0]
+    link = re.split(r"pswd:|\|", link)[0]
     link = link.strip()
-    pswdMsg = mesg[0].split(' pswd: ')
-    if len(pswdMsg) > 1:
-        pswd = pswdMsg[1]
-    if reply_to is not None:
-        reply_text = reply_to.text
-        link = reply_text.strip()
+    pswd_arg = mesg[0].split(' pswd: ')
+    if len(pswd_arg) > 1:
+        pswd = pswd_arg[1]
+    if reply_to:
+        link = reply_to.text.split(maxsplit=1)[0].strip()
     is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
     if any([is_appdrive, is_gdtot]):

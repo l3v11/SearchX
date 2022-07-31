@@ -24,5 +24,4 @@ class DatabaseHelper:
             AUTHORIZED_CHATS.add(user['user_id'])
 
 if DATABASE_URL is not None:
-    db = DatabaseHelper()
-    db.load_users()
+    DatabaseHelper().load_users()

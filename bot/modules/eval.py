@@ -52,7 +52,7 @@ def cleanup_code(code):
     return code.strip('` \n')
 
 def do(func, bot, update):
-    content = update.message.text.split(' ', 1)[-1]
+    content = update.message.text.split(maxsplit=1)[-1]
     body = cleanup_code(content)
     env = namespace_of(update.message.chat_id, update, bot)
 

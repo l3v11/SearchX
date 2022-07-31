@@ -7,13 +7,13 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 
 def list_drive(update, context):
-    args = update.message.text.split(" ", maxsplit=1)
+    args = update.message.text.split(maxsplit=1)
     reply_to = update.message.reply_to_message
     query = ''
     if len(args) > 1:
-        query = args[1]
+        query = args[1].strip()
     if reply_to is not None:
-        query = reply_to.text
+        query = reply_to.text.strip()
     if query != '':
         reply = sendMessage(f"<b>Search in progress...</b>", context.bot, update.message)
         LOGGER.info(f"Finding: {query}")

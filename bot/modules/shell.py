@@ -5,18 +5,18 @@ from telegram.ext import CommandHandler
 from bot import dispatcher
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
 
 def shell(update, context):
     message = update.effective_message
-    cmd = message.text.split(' ', 1)
+    cmd = message.text.split(maxsplit=1)
     if len(cmd) == 1:
-        return sendMessage('<b>Send a command to execute</b>', context.bot, update.message)
+        return message.reply_text('<b>Send a command to execute</b>', parse_mode='HTML')
     cmd = cmd[1]
-    process = subprocess.run(cmd, capture_output=True, shell=True)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    stdout, stderr = process.communicate()
     reply = ''
-    stdout = process.stdout.decode('utf-8')
-    stderr = process.stderr.decode('utf-8')
+    stdout = stdout.decode()
+    stderr = stderr.decode()
     if len(stdout) != 0:
         reply += f"<b>Stdout</b>\n<code>{stdout}</code>\n"
     if len(stderr) != 0:
@@ -31,9 +31,9 @@ def shell(update, context):
                 reply_to_message_id=message.message_id,
                 chat_id=message.chat_id)
     elif len(reply) != 0:
-        sendMessage(reply, context.bot, update.message)
+        message.reply_text(reply, parse_mode='HTML')
     else:
-        sendMessage('Executed', context.bot, update.message)
+        message.reply_text('<b>Command executed</b>', parse_mode='HTML')
 
 shell_handler = CommandHandler(BotCommands.ShellCommand, shell,
                                filters=CustomFilters.owner_filter, run_async=True)
