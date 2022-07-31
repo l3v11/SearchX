@@ -42,9 +42,7 @@ def appdrive(url: str) -> str:
     except IndexError:
         raise DDLExceptionHandler("Invalid link")
     ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
-    info = {}
-    info['error'] = False
-    info['link_type'] = 'login'  # direct/login
+    info = {'error': False, 'link_type': 'login'}
     headers = {
         "Content-Type": f"multipart/form-data; boundary={'-'*4}_",
     }
@@ -80,15 +78,11 @@ def gdtot(url: str) -> str:
     res = client.get(url)
     res = client.get(f"https://new.gdtot.nl/dld?id={url.split('/')[-1]}")
     url = re.findall(r'URL=(.*?)"', res.text)[0]
-    info = {}
-    info['error'] = False
+    info = {'error': False}
     params = parse_qs(urlparse(url).query)
     if 'gd' not in params or not params['gd'] or params['gd'][0] == 'false':
         info['error'] = True
-        if 'msgx' in params:
-            info['message'] = params['msgx'][0]
-        else:
-            info['message'] = 'Invalid link'
+        info['message'] = params['msgx'][0] if 'msgx' in params else 'Invalid link'
     else:
         decoded_id = base64.b64decode(str(params['gd'][0])).decode('utf-8')
         drive_link = f'https://drive.google.com/open?id={decoded_id}'

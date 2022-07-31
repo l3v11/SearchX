@@ -26,8 +26,7 @@ def start(update, context):
         sendMessage("<b>Access denied</b>", context.bot, update.message)
 
 def listkeys(update, context):
-    keys = ''
-    keys += '\n'.join(f"• <code>{key}</code>" for key in DEST_DRIVES.keys())
+    keys = '' + '\n'.join(f"• <code>{key}</code>" for key in DEST_DRIVES.keys())
     msg = f"<b><u>Available Keys</u></b>\n{keys}"
     sendMessage(msg, context.bot, update.message)
 

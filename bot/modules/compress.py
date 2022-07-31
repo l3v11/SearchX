@@ -51,7 +51,7 @@ class CompressListener:
             try:
                 with download_dict_lock:
                     download_dict[self.uid] = ArchiveStatus(name, m_path, size)
-                path = m_path + ".zip"
+                path = f"{m_path}.zip"
                 LOGGER.info(f"Archiving: {name}")
                 if self.pswd is not None:
                     subprocess.run(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
@@ -143,9 +143,7 @@ class CompressListener:
             url = f'{INDEX_URL}/{url_path}'
             if os.path.isdir(f'{DOWNLOAD_DIR}/{self.uid}/{name}'):
                 url += '/'
-                msg += f'<b> | <a href="{url}">Index Link</a></b>'
-            else:
-                msg += f'<b> | <a href="{url}">Index Link</a></b>'
+            msg += f'<b> | <a href="{url}">Index Link</a></b>'
         sendMessage(msg, self.bot, self.message)
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:
@@ -215,8 +213,11 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
     if is_gdrive_link(link):
         threading.Thread(target=add_gd_download, args=(link, listener, is_appdrive, appdict, is_gdtot)).start()
     else:
-        help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
-        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        help_msg = (
+            '<b><u>Instructions</u></b>\nSend a link along with command'
+            + '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        )
+
         help_msg += '\n\n<b><u>Set Password</u></b>\nAdd "<code>pswd: xxx</code>" after the link'
         sendMessage(help_msg, bot, message)
 
