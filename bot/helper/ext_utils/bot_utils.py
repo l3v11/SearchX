@@ -40,10 +40,15 @@ def getDownloadByGid(gid):
     with download_dict_lock:
         for dl in list(download_dict.values()):
             status = dl.status()
-            if status not in [TaskStatus.STATUS_ARCHIVING,
-                              TaskStatus.STATUS_EXTRACTING]:
-                if dl.gid() == gid:
-                    return dl
+            if (
+                status
+                not in [
+                    TaskStatus.STATUS_ARCHIVING,
+                    TaskStatus.STATUS_EXTRACTING,
+                ]
+                and dl.gid() == gid
+            ):
+                return dl
     return None
 
 def get_progress_bar_string(status):

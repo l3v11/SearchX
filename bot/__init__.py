@@ -96,7 +96,7 @@ except:
 try:
     DOWNLOAD_DIR = get_config('DOWNLOAD_DIR')
     if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+        DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
 except:
     LOGGER.error("DOWNLOAD_DIR env variable is missing")
     exit(1)
@@ -277,7 +277,7 @@ def create_account(sname):
         time.sleep(e.retry_after)
         create_account(sname)
 
-for i in range(TELEGRAPH_ACCS):
+for _ in range(TELEGRAPH_ACCS):
     sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
     create_account(sname)
 LOGGER.info(f"Generated {TELEGRAPH_ACCS} telegraph tokens")

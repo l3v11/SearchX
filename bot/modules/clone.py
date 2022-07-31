@@ -57,13 +57,12 @@ def cloneNode(update, context):
         deleteMessage(context.bot, msg)
         if res != "":
             return sendMessage(res, context.bot, update.message)
-        if CLONE_LIMIT is not None:
-            if size > CLONE_LIMIT * 1024**3:
-                msg2 = f"<b>Name:</b> <code>{name}</code>"
-                msg2 += f"\n<b>Size:</b> {get_readable_file_size(size)}"
-                msg2 += f"\n<b>Limit:</b> {CLONE_LIMIT} GB"
-                msg2 += "\n\n<b>⚠️ Task failed</b>"
-                return sendMessage(msg2, context.bot, update.message)
+        if CLONE_LIMIT is not None and size > CLONE_LIMIT * 1024**3:
+            msg2 = f"<b>Name:</b> <code>{name}</code>"
+            msg2 += f"\n<b>Size:</b> {get_readable_file_size(size)}"
+            msg2 += f"\n<b>Limit:</b> {CLONE_LIMIT} GB"
+            msg2 += "\n\n<b>⚠️ Task failed</b>"
+            return sendMessage(msg2, context.bot, update.message)
         if files <= 20:
             msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update.message)
             LOGGER.info(f"Cloning: {link}")
@@ -91,16 +90,20 @@ def cloneNode(update, context):
             except IndexError:
                 pass
         sendMessage(result, context.bot, update.message)
-        if is_appdrive:
-            if appdict.get('link_type') == 'login':
-                LOGGER.info(f"Deleting: {link}")
-                gd.deleteFile(link)
-        elif is_gdtot:
+        if (
+            is_appdrive
+            and appdict.get('link_type') == 'login'
+            or not is_appdrive
+            and is_gdtot
+        ):
             LOGGER.info(f"Deleting: {link}")
             gd.deleteFile(link)
     else:
-        help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
-        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        help_msg = (
+            '<b><u>Instructions</u></b>\nSend a link along with command'
+            + '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        )
+
         help_msg += '\n\n<b><u>Set Destination Drive</u></b>\nAdd &lt;key&gt; after the link'
         sendMessage(help_msg, context.bot, update.message)
 

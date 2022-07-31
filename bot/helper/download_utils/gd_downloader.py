@@ -15,13 +15,12 @@ def add_gd_download(link, listener, is_appdrive, appdict, is_gdtot):
     deleteMessage(listener.bot, msg)
     if res != "":
         return sendMessage(res, listener.bot, listener.message)
-    if COMPRESS_LIMIT is not None:
-        if size > COMPRESS_LIMIT * 1024**3:
-            msg2 = f"<b>Name:</b> <code>{name}</code>"
-            msg2 += f"\n<b>Size:</b> {get_readable_file_size(size)}"
-            msg2 += f"\n<b>Limit:</b> {COMPRESS_LIMIT} GB"
-            msg2 += "\n\n<b>⚠️ Task failed</b>"
-            return sendMessage(msg2, listener.bot, listener.message)
+    if COMPRESS_LIMIT is not None and size > COMPRESS_LIMIT * 1024**3:
+        msg2 = f"<b>Name:</b> <code>{name}</code>"
+        msg2 += f"\n<b>Size:</b> {get_readable_file_size(size)}"
+        msg2 += f"\n<b>Limit:</b> {COMPRESS_LIMIT} GB"
+        msg2 += "\n\n<b>⚠️ Task failed</b>"
+        return sendMessage(msg2, listener.bot, listener.message)
     LOGGER.info(f"Downloading: {name}")
     drive = GoogleDriveHelper(name, listener)
     gid = ''.join(random.SystemRandom().choices(string.ascii_letters + string.digits, k=12))
@@ -30,10 +29,11 @@ def add_gd_download(link, listener, is_appdrive, appdict, is_gdtot):
         download_dict[listener.uid] = download_status
     sendStatusMessage(listener.message, listener.bot)
     drive.download(link)
-    if is_appdrive:
-        if appdict.get('link_type') == 'login':
-            LOGGER.info(f"Deleting: {link}")
-            drive.deleteFile(link)
-    elif is_gdtot:
+    if (
+        is_appdrive
+        and appdict.get('link_type') == 'login'
+        or not is_appdrive
+        and is_gdtot
+    ):
         LOGGER.info(f"Deleting: {link}")
         drive.deleteFile(link)
