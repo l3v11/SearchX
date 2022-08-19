@@ -606,7 +606,7 @@ class GoogleDriveHelper:
 
             if i != 0:
                 # Add previous page link
-                self.telegraph_content[i] += f'<b><a href="https://telegra.ph/{self.path[i-1]}">Previous</a>' \
+                self.telegraph_content[i] += f'<b><a href="https://graph.org/{self.path[i-1]}">Previous</a>' \
                                              f' | Page {i+1}/{total_pages}</b>'
             else:
                 self.telegraph_content[i] += f'<b>Page {i+1}/{total_pages}</b>'
@@ -617,7 +617,7 @@ class GoogleDriveHelper:
 
             if i != 0:
                 # Edit previous page to add next page link
-                self.telegraph_content[i-1] += f'<b> | <a href="https://telegra.ph/{self.path[i]}">Next</a></b>'
+                self.telegraph_content[i-1] += f'<b> | <a href="https://graph.org/{self.path[i]}">Next</a></b>'
 
                 self.edit_page(
                     TELEGRAPH[(acc_no - 1) if i % page_per_acc == 0 else acc_no],
@@ -627,7 +627,7 @@ class GoogleDriveHelper:
         msg = f"<b>Found {response_count} results matching '{file_name}' in {len(DRIVE_IDS)} Drives</b> " \
               f"<b>(Time taken {round(time.time() - start_time, 2)}s)</b>"
         button = ButtonMaker()
-        button.build_button("VIEW RESULTS 🗂️", f"https://telegra.ph/{self.path[0]}")
+        button.build_button("VIEW RESULTS 🗂️", f"https://graph.org/{self.path[0]}")
         return msg, InlineKeyboardMarkup(button.build_menu(1))
 
     def create_page(self, acc, content):

@@ -144,8 +144,8 @@ help_admin = TELEGRAPH[0].create_page(
 
 def bot_help(update, context):
     button = ButtonMaker()
-    button.build_button("User", f"https://telegra.ph/{help_user}")
-    button.build_button("Admin", f"https://telegra.ph/{help_admin}")
+    button.build_button("User", f"https://graph.org/{help_user}")
+    button.build_button("Admin", f"https://graph.org/{help_admin}")
     sendMarkup(help_string, context.bot, update.message, InlineKeyboardMarkup(button.build_menu(2)))
 
 def main():
