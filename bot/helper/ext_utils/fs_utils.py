@@ -8,9 +8,9 @@ from bot import LOGGER, DOWNLOAD_DIR
 from bot.helper.ext_utils.exceptions import CompressExceptionHandler
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
-                ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",
-                ".cpio", ".cramfs", ".deb", ".dmg", ".fat", ".hfs", ".lzh", ".lzma", ".mbr",
-                ".msi", ".mslz", ".nsis", ".ntfs", ".rpm", ".squashfs", ".udf", ".vhd", ".xar"]
+            ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",
+            ".cpio", ".cramfs", ".deb", ".dmg", ".fat", ".hfs", ".lzh", ".lzma", ".mbr",
+            ".msi", ".mslz", ".nsis", ".ntfs", ".rpm", ".squashfs", ".udf", ".vhd", ".xar"]
 
 def clean_download(path: str):
     if os.path.exists(path):
@@ -26,6 +26,19 @@ def start_cleanup():
     except:
         pass
     os.makedirs(DOWNLOAD_DIR)
+
+def clean_target(path: str):
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            try:
+                shutil.rmtree(path)
+            except:
+                pass
+        elif os.path.isfile(path):
+            try:
+                os.remove(path)
+            except:
+                pass
 
 def clean_all():
     try:

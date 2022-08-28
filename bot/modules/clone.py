@@ -72,7 +72,7 @@ def cloneNode(update, context):
         else:
             drive = GoogleDriveHelper(name)
             gid = ''.join(random.SystemRandom().choices(string.ascii_letters + string.digits, k=12))
-            clone_status = CloneStatus(drive, size, files, update.message, gid)
+            clone_status = CloneStatus(drive, size, update.message, gid)
             with download_dict_lock:
                 download_dict[update.message.message_id] = clone_status
             sendStatusMessage(update.message, context.bot)

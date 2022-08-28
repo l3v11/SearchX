@@ -7,7 +7,7 @@ from bot.helper.status_utils.download_status import DownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, sendStatusMessage
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
-def add_gd_download(link, listener, is_appdrive, appdict, is_gdtot):
+def add_gd_download(link, path, listener, is_appdrive, appdict, is_gdtot):
     msg = sendMessage(f"<b>Checking:</b> <code>{link}</code>", listener.bot, listener.message)
     LOGGER.info(f"Checking: {link}")
     gd = GoogleDriveHelper()
@@ -23,7 +23,7 @@ def add_gd_download(link, listener, is_appdrive, appdict, is_gdtot):
             msg2 += "\n\n<b>⚠️ Task failed</b>"
             return sendMessage(msg2, listener.bot, listener.message)
     LOGGER.info(f"Downloading: {name}")
-    drive = GoogleDriveHelper(name, listener)
+    drive = GoogleDriveHelper(name, path, size, listener)
     gid = ''.join(random.SystemRandom().choices(string.ascii_letters + string.digits, k=12))
     download_status = DownloadStatus(drive, size, listener, gid)
     with download_dict_lock:

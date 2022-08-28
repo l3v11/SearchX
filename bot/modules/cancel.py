@@ -12,7 +12,8 @@ def cancelNode(update, context):
         gid = context.args[0]
         dl = getDownloadByGid(gid)
         if not dl:
-            return sendMessage(f"<b>GID:</b> <code>{gid}</code> not found", context.bot, update.message)
+            sendMessage(f"<b>GID:</b> <code>{gid}</code> not found", context.bot, update.message)
+            return
     elif update.message.reply_to_message:
         task_message = update.message.reply_to_message
         with download_dict_lock:
@@ -21,11 +22,14 @@ def cancelNode(update, context):
             else:
                 dl = None
         if not dl:
-            return sendMessage("Not an active task", context.bot, update.message)
+            sendMessage("Not an active task", context.bot, update.message)
+            return
     elif len(context.args) == 0:
-        return sendMessage("<b>Send a GID along with command</b>", context.bot, update.message)
+        sendMessage("<b>Send a GID along with command</b>", context.bot, update.message)
+        return
     if OWNER_ID != user_id and dl.message.from_user.id != user_id:
-        return sendMessage("Not your task", context.bot, update.message)
+        sendMessage("Not your task", context.bot, update.message)
+        return
     dl.download().cancel_task()
 
 cancel_handler = CommandHandler(BotCommands.CancelCommand, cancelNode,

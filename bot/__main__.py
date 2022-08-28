@@ -4,7 +4,6 @@ import time
 
 from psutil import cpu_percent, cpu_count, disk_usage, virtual_memory, net_io_counters
 from sys import executable
-from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 
 from bot import bot, LOGGER, botStartTime, AUTHORIZED_CHATS, DEST_DRIVES, TELEGRAPH, Interval, dispatcher, updater
@@ -38,26 +37,16 @@ def ping(update, context):
     editMessage(f'<code>{end_time - start_time}ms</code>', reply)
 
 def stats(update, context):
-    uptime = get_readable_time(time.time() - botStartTime)
     total, used, free, disk = disk_usage('/')
-    total = get_readable_file_size(total)
-    used = get_readable_file_size(used)
-    free = get_readable_file_size(free)
-    sent = get_readable_file_size(net_io_counters().bytes_sent)
-    recv = get_readable_file_size(net_io_counters().bytes_recv)
-    cpu = cpu_percent(interval=0.5)
-    ram = virtual_memory().percent
-    p_core = cpu_count(logical=False)
-    l_core = cpu_count(logical=True)
     stats = '⚙️ <u><b>SYSTEM STATISTICS</b></u>' \
-            f'\n\n<b>Total Disk Space:</b> {total}' \
-            f'\n<b>Used:</b> {used} | <b>Free:</b> {free}' \
-            f'\n\n<b>Upload:</b> {sent}' \
-            f'\n<b>Download:</b> {recv}' \
-            f'\n\n<b>Physical Cores:</b> {p_core}' \
-            f'\n<b>Logical Cores:</b> {l_core}' \
-            f'\n\n<b>CPU:</b> {cpu}% | <b>RAM:</b> {ram}%' \
-            f'\n<b>DISK:</b> {disk}% | <b>Uptime:</b> {uptime}'
+            f'\n\n<b>Total Disk Space:</b> {get_readable_file_size(total)}' \
+            f'\n<b>Used:</b> {get_readable_file_size(used)} | <b>Free:</b> {get_readable_file_size(free)}' \
+            f'\n\n<b>Upload:</b> {get_readable_file_size(net_io_counters().bytes_sent)}' \
+            f'\n<b>Download:</b> {get_readable_file_size(net_io_counters().bytes_recv)}' \
+            f'\n\n<b>Physical Cores:</b> {cpu_count(logical=False)}' \
+            f'\n<b>Logical Cores:</b> {cpu_count(logical=True)}' \
+            f'\n\n<b>CPU:</b> {cpu_percent(interval=0.5)}% | <b>RAM:</b> {virtual_memory().percent}%' \
+            f'\n<b>DISK:</b> {disk}% | <b>Uptime:</b> {get_readable_time(time.time() - botStartTime)}'
     sendMessage(stats, context.bot, update.message)
 
 def log(update, context):
@@ -129,7 +118,11 @@ help_string_admin = f'''
 <br><br>
 • <b>/{BotCommands.ShellCommand}</b> &lt;cmd&gt;: Run commands in terminal
 <br><br>
-• <b>/{BotCommands.ExecHelpCommand}</b>: Get help about executor
+• <b>/{BotCommands.EvalCommand}</b>: Evaluate Python expressions using eval() function
+<br><br>
+• <b>/{BotCommands.ExecCommand}</b>: Execute Python code using exec() function
+<br><br>
+• <b>/{BotCommands.ClearLocalsCommand}</b>: Clear locals of eval() and exec() functions
 <br><br>
 • <b>/{BotCommands.LogCommand}</b>: Get the log file
 <br><br>
@@ -146,14 +139,14 @@ def bot_help(update, context):
     button = ButtonMaker()
     button.build_button("User", f"https://graph.org/{help_user}")
     button.build_button("Admin", f"https://graph.org/{help_admin}")
-    sendMarkup(help_string, context.bot, update.message, InlineKeyboardMarkup(button.build_menu(2)))
+    sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
 
 def main():
     start_cleanup()
     if os.path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTMl')
+        bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTML')
         os.remove(".restartmsg")
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)

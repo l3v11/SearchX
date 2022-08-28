@@ -14,7 +14,7 @@ from bot.helper.download_utils.gd_downloader import add_gd_download
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, is_appdrive_link, is_gdtot_link
 from bot.helper.ext_utils.exceptions import CompressExceptionHandler, DDLExceptionHandler
-from bot.helper.ext_utils.fs_utils import clean_download, get_base_name, get_path_size
+from bot.helper.ext_utils.fs_utils import clean_download, clean_target, get_base_name, get_path_size
 from bot.helper.status_utils.archive_status import ArchiveStatus
 from bot.helper.status_utils.extract_status import ExtractStatus
 from bot.helper.status_utils.upload_status import UploadStatus
@@ -26,10 +26,11 @@ class CompressListener:
     def __init__(self, bot, message, is_archive=False, is_extract=False, pswd=None):
         self.bot = bot
         self.message = message
-        self.uid = self.message.message_id
+        self.uid = message.message_id
         self.is_archive = is_archive
         self.is_extract = is_extract
         self.pswd = pswd
+        self.dir = f'{DOWNLOAD_DIR}{self.uid}'
         self.suproc = None
 
     def clean(self):
@@ -45,10 +46,10 @@ class CompressListener:
             download = download_dict[self.uid]
             name = str(download.name()).replace('/', '')
             gid = download.gid()
-            m_path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+        m_path = f'{self.dir}/{name}'
         size = get_path_size(m_path)
         if self.is_archive:
-            path = m_path + ".zip"
+            path = f"{m_path}.zip"
             with download_dict_lock:
                 download_dict[self.uid] = ArchiveStatus(name, size, gid, self)
             LOGGER.info(f"Archiving: {name}")
@@ -59,14 +60,7 @@ class CompressListener:
             self.suproc.wait()
             if self.suproc.returncode == -9:
                 return
-            elif self.suproc.returncode != 0:
-                LOGGER.error("Failed to archive the data")
-                path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
-            if self.suproc.returncode == 0:
-                try:
-                    shutil.rmtree(m_path)
-                except:
-                    os.remove(m_path)
+            clean_target(m_path)
         elif self.is_extract:
             try:
                 if os.path.isfile(m_path):
@@ -75,59 +69,92 @@ class CompressListener:
                 with download_dict_lock:
                     download_dict[self.uid] = ExtractStatus(name, size, gid, self)
                 if os.path.isdir(m_path):
+                    path = m_path
                     for dirpath, subdir, files in os.walk(m_path, topdown=False):
                         for file_ in files:
-                            if file_.endswith((".zip", ".7z")) or re.search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$', file_) \
-                               or (file_.endswith(".rar") and not re.search(r'\.part\d+\.rar$', file_)):
-                                m_path = os.path.join(dirpath, file_)
+                            if re.search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$|\.zip$|\.7z$|^.(?!.*\.part\d+\.rar)(?=.*\.rar$)', file_):
+                                f_path = os.path.join(dirpath, file_)
                                 if self.pswd is not None:
-                                    self.suproc = subprocess.Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
+                                    self.suproc = subprocess.Popen(["7z", "x", f"-p{self.pswd}", f_path, f"-o{dirpath}", "-aot"])
                                 else:
-                                    self.suproc = subprocess.Popen(["7z", "x", m_path, f"-o{dirpath}", "-aot"])
+                                    self.suproc = subprocess.Popen(["7z", "x", f_path, f"-o{dirpath}", "-aot"])
                                 self.suproc.wait()
                                 if self.suproc.returncode == -9:
                                     return
                                 elif self.suproc.returncode != 0:
-                                    LOGGER.error("Failed to extract the archive")
-                        if self.suproc.returncode == 0:
+                                    LOGGER.error("Failed to extract the split archive")
+                        if self.suproc is not None and self.suproc.returncode == 0:
                             for file_ in files:
-                                if file_.endswith((".rar", ".zip", ".7z")) or \
-                                    re.search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
+                                if re.search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$|\.zip$|\.rar$|\.7z$', file_):
                                     del_path = os.path.join(dirpath, file_)
-                                    os.remove(del_path)
-                    path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+                                    try:
+                                        os.remove(del_path)
+                                    except:
+                                        return
                 else:
                     if self.pswd is not None:
-                        self.suproc = subprocess.Popen(["bash", "pextract", m_path, self.pswd])
+                        self.suproc = subprocess.Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{path}", "-aot"])
                     else:
-                        self.suproc = subprocess.Popen(["bash", "extract", m_path])
+                        self.suproc = subprocess.Popen(["7z", "x", m_path, f"-o{path}", "-aot"])
                     self.suproc.wait()
                     if self.suproc.returncode == -9:
                         return
                     elif self.suproc.returncode == 0:
-                        os.remove(m_path)
+                        try:
+                            os.remove(m_path)
+                        except:
+                            return
                     else:
                         LOGGER.error("Failed to extract the archive")
-                        path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+                        path = m_path
             except CompressExceptionHandler as err:
                 LOGGER.info(err)
-                path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
+                path = m_path
         else:
-            path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
-        up_name = path.rsplit('/', 1)[-1]
-        up_path = f'{DOWNLOAD_DIR}{self.uid}/{up_name}'
+            path = m_path
+        up_dir, up_name = path.rsplit('/', 1)
+        up_path = f'{up_dir}/{up_name}'
         size = get_path_size(up_path)
         LOGGER.info(f"Uploading: {up_name}")
-        drive = GoogleDriveHelper(up_name, self)
+        drive = GoogleDriveHelper(up_name, up_dir, size, self)
         upload_status = UploadStatus(drive, size, gid, self)
         with download_dict_lock:
             download_dict[self.uid] = upload_status
         update_all_messages()
         drive.upload(up_name)
 
+    def onUploadComplete(self, link: str, size, files, folders, typ, name):
+        msg = f'<b>Name:</b> <code>{escape(name)}</code>'
+        msg += f'\n<b>Size:</b> {size}'
+        msg += f'\n<b>Type: </b>{typ}'
+        if typ == "Folder":
+            msg += f'\n<b>SubFolders:</b> {folders}'
+            msg += f'\n<b>Files:</b> {files}'
+        msg += f'\n\n<b><a href="{link}">Drive Link</a></b>'
+        if INDEX_URL is not None:
+            url_path = requests.utils.quote(f'{name}')
+            url = f'{INDEX_URL}/{url_path}'
+            if typ == "Folder":
+                url += '/'
+                msg += f'<b> | <a href="{url}">Index Link</a></b>'
+            else:
+                msg += f'<b> | <a href="{url}">Index Link</a></b>'
+        sendMessage(msg, self.bot, self.message)
+        clean_download(self.dir)
+        with download_dict_lock:
+            try:
+                del download_dict[self.uid]
+            except Exception as e:
+                LOGGER.error(str(e))
+            count = len(download_dict)
+        if count == 0:
+            self.clean()
+        else:
+            update_all_messages()
+
     def onDownloadError(self, error):
         error = error.replace('<', '').replace('>', '')
-        clean_download(f'{DOWNLOAD_DIR}{self.uid}')
+        clean_download(self.dir)
         with download_dict_lock:
             try:
                 del download_dict[self.uid]
@@ -140,38 +167,9 @@ class CompressListener:
         else:
             update_all_messages()
 
-    def onUploadComplete(self, link: str, size, files, folders, typ, name: str):
-        msg = f'<b>Name:</b> <code>{escape(name)}</code>'
-        msg += f'\n<b>Size:</b> {size}'
-        msg += f'\n<b>Type: </b>{typ}'
-        if os.path.isdir(f'{DOWNLOAD_DIR}{self.uid}/{name}'):
-            msg += f'\n<b>SubFolders:</b> {folders}'
-            msg += f'\n<b>Files:</b> {files}'
-        msg += f'\n\n<b><a href="{link}">Drive Link</a></b>'
-        if INDEX_URL is not None:
-            url_path = requests.utils.quote(f'{name}')
-            url = f'{INDEX_URL}/{url_path}'
-            if os.path.isdir(f'{DOWNLOAD_DIR}/{self.uid}/{name}'):
-                url += '/'
-                msg += f'<b> | <a href="{url}">Index Link</a></b>'
-            else:
-                msg += f'<b> | <a href="{url}">Index Link</a></b>'
-        sendMessage(msg, self.bot, self.message)
-        clean_download(f'{DOWNLOAD_DIR}{self.uid}')
-        with download_dict_lock:
-            try:
-                del download_dict[self.uid]
-            except Exception as e:
-                LOGGER.error(str(e))
-            count = len(download_dict)
-        if count == 0:
-            self.clean()
-        else:
-            update_all_messages()
-
     def onUploadError(self, error):
         error = error.replace('<', '').replace('>', '')
-        clean_download(f'{DOWNLOAD_DIR}{self.uid}')
+        clean_download(self.dir)
         with download_dict_lock:
             try:
                 del download_dict[self.uid]
@@ -202,7 +200,9 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
     pswd_arg = mesg[0].split(' pswd: ')
     if len(pswd_arg) > 1:
         pswd = pswd_arg[1]
-    if reply_to:
+    else:
+        pswd = None
+    if reply_to is not None:
         link = reply_to.text.split(maxsplit=1)[0].strip()
     is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
@@ -222,7 +222,7 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
             return sendMessage(str(e), bot, message)
     listener = CompressListener(bot, message, is_archive, is_extract, pswd)
     if is_gdrive_link(link):
-        threading.Thread(target=add_gd_download, args=(link, listener, is_appdrive, appdict, is_gdtot)).start()
+        threading.Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, is_appdrive, appdict, is_gdtot)).start()
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
         help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'

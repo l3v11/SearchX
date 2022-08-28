@@ -103,25 +103,13 @@ def clear(update, context):
         del namespaces[update.message.chat_id]
     send("Cleared locals", bot, update)
 
-def exechelp(update, context):
-    help_string = f'''
-<u><b>Executor</b></u>
-• /{BotCommands.EvalCommand}: Run code in Python
-• /{BotCommands.ExecCommand}: Run commands in Exec
-• /{BotCommands.ClearLocalsCommand}: Clear locals
-'''
-    sendMessage(help_string, context.bot, update.message)
-
 eval_handler = CommandHandler(BotCommands.EvalCommand, evaluate,
                               filters=CustomFilters.owner_filter, run_async=True)
 exec_handler = CommandHandler(BotCommands.ExecCommand, execute,
                               filters=CustomFilters.owner_filter, run_async=True)
 clear_handler = CommandHandler(BotCommands.ClearLocalsCommand, clear,
                                filters=CustomFilters.owner_filter, run_async=True)
-exechelp_handler = CommandHandler(BotCommands.ExecHelpCommand, exechelp,
-                                  filters=CustomFilters.owner_filter, run_async=True)
 
 dispatcher.add_handler(eval_handler)
 dispatcher.add_handler(exec_handler)
 dispatcher.add_handler(clear_handler)
-dispatcher.add_handler(exechelp_handler)

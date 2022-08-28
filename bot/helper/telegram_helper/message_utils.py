@@ -12,7 +12,7 @@ def sendMessage(text: str, bot, message: Message):
     try:
         return bot.sendMessage(message.chat_id,
                                 reply_to_message_id=message.message_id,
-                                text=text, parse_mode='HTMl',
+                                text=text, parse_mode='HTML',
                                 disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))
@@ -27,7 +27,7 @@ def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMar
         return bot.sendMessage(message.chat_id,
                                 reply_to_message_id=message.message_id,
                                 text=text, reply_markup=reply_markup,
-                                parse_mode='HTMl', disable_web_page_preview=True)
+                                parse_mode='HTML', disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
@@ -40,7 +40,7 @@ def editMessage(text: str, message: Message, reply_markup=None):
     try:
         bot.editMessageText(text=text, message_id=message.message_id,
                               chat_id=message.chat.id,
-                              reply_markup=reply_markup, parse_mode='HTMl',
+                              reply_markup=reply_markup, parse_mode='HTML',
                               disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))

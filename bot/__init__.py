@@ -68,14 +68,6 @@ download_dict = {}
 status_reply_dict = {}
 
 try:
-    users = get_config('AUTHORIZED_CHATS')
-    users = users.split()
-    for user in users:
-        AUTHORIZED_CHATS.add(int(user.strip()))
-except:
-    pass
-
-try:
     BOT_TOKEN = get_config('BOT_TOKEN')
 except:
     LOGGER.error("BOT_TOKEN env variable is missing")
@@ -100,6 +92,14 @@ try:
 except:
     LOGGER.error("DOWNLOAD_DIR env variable is missing")
     exit(1)
+
+try:
+    users = get_config('AUTHORIZED_CHATS')
+    users = users.split()
+    for user in users:
+        AUTHORIZED_CHATS.add(int(user.strip()))
+except:
+    pass
 
 try:
     DATABASE_URL = get_config('DATABASE_URL')

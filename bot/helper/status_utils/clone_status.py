@@ -2,10 +2,9 @@ from bot.helper.ext_utils.bot_utils import TaskStatus, get_readable_file_size, g
 
 
 class CloneStatus:
-    def __init__(self, obj, size, files, message, gid):
+    def __init__(self, obj, size, message, gid):
         self.__obj = obj
         self.__size = size
-        self.__files = files
         self.__gid = gid
         self.message = message
 
@@ -23,12 +22,6 @@ class CloneStatus:
 
     def name(self):
         return self.__obj.name
-
-    def files(self):
-        return self.__files
-
-    def processed_files(self):
-        return self.__obj.total_files
 
     def gid(self) -> str:
         return self.__gid

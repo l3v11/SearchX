@@ -13,11 +13,11 @@ SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 URL_REGEX = r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'
 
 class TaskStatus:
-    STATUS_CLONING = "Cloning...♻️"
-    STATUS_DOWNLOADING = "Downloading...📥"
-    STATUS_UPLOADING = "Uploading...📤"
-    STATUS_ARCHIVING = "Archiving...🔐"
-    STATUS_EXTRACTING = "Extracting...📂"
+    STATUS_CLONING = "Cloning"
+    STATUS_DOWNLOADING = "Downloading"
+    STATUS_UPLOADING = "Uploading"
+    STATUS_ARCHIVING = "Archiving"
+    STATUS_EXTRACTING = "Extracting"
 
 class SetInterval:
     def __init__(self, interval, action):
@@ -58,46 +58,32 @@ def get_readable_message():
     with download_dict_lock:
         msg = ""
         for download in list(download_dict.values()):
-            msg += f"<b>Name:</b> <code>{escape(str(download.name()))}</code>"
-            msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
+            msg += f"<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>"
             msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
-            if download.status() == TaskStatus.STATUS_CLONING:
-                msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-                msg += f"\n<b>Transfers:</b> {download.processed_files()} / {download.files()}"
-            elif download.status() == TaskStatus.STATUS_DOWNLOADING:
-                msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-            elif download.status() == TaskStatus.STATUS_UPLOADING:
-                msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-            elif download.status() == TaskStatus.STATUS_ARCHIVING:
-                msg += f"\n<b>Archived:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
-            elif download.status() == TaskStatus.STATUS_EXTRACTING:
-                msg += f"\n<b>Extracted:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
+            msg += f"\n<b>Processed:</b> {get_readable_file_size(download.processed_bytes())} / {download.size()}"
             msg += f"\n<b>Speed:</b> {download.speed()} | <b>ETA:</b> {download.eta()}"
             msg += f"\n<code>/{BotCommands.CancelCommand} {download.gid()}</code>"
             msg += "\n\n"
         if len(msg) == 0:
             return None
-        cpu = cpu_percent(interval=0.5)
-        ram = virtual_memory().percent
-        disk = disk_usage('/').percent
-        uptime = get_readable_time(time.time() - botStartTime)
-        sysmsg = f"<b>CPU:</b> {cpu}% | <b>RAM:</b> {ram}%"
-        sysmsg += f"\n<b>DISK:</b> {disk}% | <b>UPTIME:</b> {uptime}"
-        dlspeed_bytes = 0
-        upspeed_bytes = 0
+        dl_speed = 0
+        up_speed = 0
         for download in list(download_dict.values()):
-            spd = download.speed()
             if download.status() == TaskStatus.STATUS_DOWNLOADING:
+                spd = download.speed()
                 if 'KB/s' in spd:
-                    dlspeed_bytes += float(spd.split('K')[0]) * 1024
+                    dl_speed += float(spd.split('K')[0]) * 1024
                 elif 'MB/s' in spd:
-                    dlspeed_bytes += float(spd.split('M')[0]) * 1048576
+                    dl_speed += float(spd.split('M')[0]) * 1048576
             elif download.status() == TaskStatus.STATUS_UPLOADING:
+                spd = download.speed()
                 if 'KB/s' in spd:
-                    upspeed_bytes += float(spd.split('K')[0]) * 1024
+                    up_speed += float(spd.split('K')[0]) * 1024
                 elif 'MB/s' in spd:
-                    upspeed_bytes += float(spd.split('M')[0]) * 1048576
-        sysmsg += f"\n<b>DL:</b> {get_readable_file_size(dlspeed_bytes)}/s | <b>UL:</b> {get_readable_file_size(upspeed_bytes)}/s"
+                    up_speed += float(spd.split('M')[0]) * 1048576
+        sysmsg = f"<b>CPU:</b> {cpu_percent()}% | <b>RAM:</b> {virtual_memory().percent}%"
+        sysmsg += f"\n<b>DISK:</b> {disk_usage('/').percent}% | <b>UPTIME:</b> {get_readable_time(time.time() - botStartTime)}"
+        sysmsg += f"\n<b>DL:</b> {get_readable_file_size(dl_speed)}/s | <b>UL:</b> {get_readable_file_size(up_speed)}/s"
         return msg + sysmsg
 
 def get_readable_file_size(size_in_bytes) -> str:
