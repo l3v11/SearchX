@@ -66,9 +66,6 @@ class GoogleDriveHelper:
         self.response = {}
         self.telegraph_path = []
         self.telegraph_content = []
-        self.title = "SearchX"
-        self.author_name = "Levi"
-        self.author_url = "https://t.me/l3v11"
 
     def speed(self):
         """
@@ -725,9 +722,9 @@ class GoogleDriveHelper:
         try:
             self.telegraph_path.append(
                 acc.create_page(
-                    title=self.title,
-                    author_name=self.author_name,
-                    author_url=self.author_url,
+                    title="SearchX",
+                    author_name="Levi",
+                    author_url="https://t.me/l3v11",
                     html_content=content)['path'])
         except RetryAfterError as e:
             LOGGER.info(f"Cooldown: {e.retry_after} seconds")
@@ -738,9 +735,9 @@ class GoogleDriveHelper:
         try:
             acc.edit_page(
                 path=path,
-                title=self.title,
-                author_name=self.author_name,
-                author_url=self.author_url,
+                title="SearchX",
+                author_name="Levi",
+                author_url="https://t.me/l3v11",
                 html_content=content)
         except RetryAfterError as e:
             LOGGER.info(f"Cooldown: {e.retry_after} seconds")
