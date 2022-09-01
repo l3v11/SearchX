@@ -43,7 +43,6 @@ class GoogleDriveHelper:
         self.__path = path
         self.__size = size
         self.__listener = listener
-        self.__service = self.__authorize()
         self.__total_bytes = 0
         self.__total_folders = 0
         self.__total_files = 0
@@ -66,6 +65,7 @@ class GoogleDriveHelper:
         self.response = {}
         self.telegraph_path = []
         self.telegraph_content = []
+        self.__service = self.__authorize()
 
     def speed(self):
         """
@@ -90,7 +90,8 @@ class GoogleDriveHelper:
     def __authorize(self):
         creds = None
         if USE_SERVICE_ACCOUNTS:
-            self.__service_account_index = randrange(SERVICE_ACCOUNTS_NUMBER)
+            if self.__sa_count == 0:
+                self.__service_account_index = randrange(SERVICE_ACCOUNTS_NUMBER)
             LOGGER.info(f"Authorizing with {self.__service_account_index}.json file")
             creds = service_account.Credentials.from_service_account_file(
                 f'accounts/{self.__service_account_index}.json', scopes=self.__OAUTH_SCOPE)
