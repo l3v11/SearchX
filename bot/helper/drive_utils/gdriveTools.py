@@ -221,7 +221,7 @@ class GoogleDriveHelper:
                     return self.helper(link)
                 msg = "File not found"
             else:
-                msg = str(err)
+                msg = err
             return msg, "", "", ""
         return "", size, name, files
 
@@ -239,16 +239,17 @@ class GoogleDriveHelper:
                       supportsAllDrives=IS_TEAM_DRIVE).execute()
             msg = "Permanently deleted"
         except HttpError as err:
-            if "File not found" in str(err):
+            err = str(err).replace('>', '').replace('<', '')
+            if "File not found" in err:
                 msg = "File not found"
-            elif "insufficientFilePermissions" in str(err):
+            elif "insufficientFilePermissions" in err:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
                     return self.deleteFile(link)
                 msg = "Insufficient file permissions"
             else:
-                msg = str(err)
+                msg = err
             LOGGER.error(msg)
         return msg
 
@@ -291,17 +292,16 @@ class GoogleDriveHelper:
                 msg = "Set permission to <code>Anyone with the link</code>"
         except HttpError as err:
             err = str(err).replace('>', '').replace('<', '')
-            LOGGER.error(err)
-            if "File not found" in str(err):
+            if "File not found" in err:
                 msg = "File not found"
-            elif "insufficientFilePermissions" in str(err):
+            elif "insufficientFilePermissions" in err:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
                     return self.setPermission(link, access)
                 msg = "Insufficient file permissions"
             else:
-                msg = str(err)
+                msg = err
         return msg
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
@@ -438,7 +438,7 @@ class GoogleDriveHelper:
                     return self.clone(link, key)
                 msg = "File not found"
             else:
-                msg = str(err)
+                msg = err
         return msg
 
     def count(self, link):
@@ -479,7 +479,7 @@ class GoogleDriveHelper:
                     return self.count(link)
                 msg = "File not found"
             else:
-                msg = str(err)
+                msg = err
         return msg
 
     def _progress(self):
@@ -677,10 +677,10 @@ class GoogleDriveHelper:
         try:
             meta = self.__getFileMetadata(file_id)
             if meta.get("mimeType") == self.__G_DRIVE_DIR_MIME_TYPE:
-                self.__download_folder(file_id, self.__path, meta.get('name'))
+                self.__download_folder(file_id, self.__path, self.name)
             else:
                 os.makedirs(self.__path)
-                self.__download_file(file_id, self.__path, meta.get('name'), meta.get('mimeType'))
+                self.__download_file(file_id, self.__path, self.name, meta.get('mimeType'))
         except Exception as err:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
@@ -749,7 +749,7 @@ class GoogleDriveHelper:
         # request_id = order number of request = shared drive index (1 based)
         if exception is not None:
             exception = str(exception).replace('>', '').replace('<', '')
-            LOGGER.error(str(exception))
+            LOGGER.error(exception)
         else: 
             if response['files']:
                 self.response[request_id] = response

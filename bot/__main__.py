@@ -86,9 +86,9 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.CancelCommand}</b> &lt;gid&gt;: Cancel a task
 <br><br>
-• <b>/{BotCommands.StatusCommand}</b>: Get a status of all tasks
+• <b>/{BotCommands.StatusCommand}</b>: Get status of all tasks
 <br><br>
-• <b>/{BotCommands.ListKeysCommand}</b>: Get a list of keys for the destination drives
+• <b>/{BotCommands.ListKeysCommand}</b>: Get the list of destination drives keys
 <br><br>
 • <b>/{BotCommands.PingCommand}</b>: Ping the bot
 <br><br>
@@ -114,7 +114,7 @@ help_string_admin = f'''
 <br><br>
 • <b>/{BotCommands.UnauthorizeCommand}</b>: Unauthorize an user or a chat for using the bot
 <br><br>
-• <b>/{BotCommands.UsersCommand}</b>: Get a list of authorized chats
+• <b>/{BotCommands.UsersCommand}</b>: Get the list of authorized users
 <br><br>
 • <b>/{BotCommands.ShellCommand}</b> &lt;cmd&gt;: Run commands in terminal
 <br><br>

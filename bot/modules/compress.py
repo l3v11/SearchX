@@ -185,7 +185,7 @@ class CompressListener:
 def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    reply_to = message.reply_to_message
+    name_arg = mesg[0].split('|', maxsplit=1)
     is_appdrive = False
     is_gdtot = False
     appdict = ''
@@ -195,6 +195,12 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
             link = ''
     else:
         link = ''
+    if len(name_arg) > 1:
+        name = name_arg[1]
+        name = name.split(' pswd:')[0]
+        name = name.strip()
+    else:
+        name = ''
     link = re.split(r"pswd:|\|", link)[0]
     link = link.strip()
     pswd_arg = mesg[0].split(' pswd: ')
@@ -202,6 +208,7 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
         pswd = pswd_arg[1]
     else:
         pswd = None
+    reply_to = message.reply_to_message
     if reply_to is not None:
         link = reply_to.text.split(maxsplit=1)[0].strip()
     is_appdrive = is_appdrive_link(link)
@@ -222,10 +229,11 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
             return sendMessage(str(e), bot, message)
     listener = CompressListener(bot, message, is_archive, is_extract, pswd)
     if is_gdrive_link(link):
-        threading.Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, is_appdrive, appdict, is_gdtot)).start()
+        threading.Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_appdrive, appdict, is_gdtot)).start()
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
         help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        help_msg += '\n\n<b><u>Set Custom Name</u></b>\nAdd "<code>|customname</code>" after the link'
         help_msg += '\n\n<b><u>Set Password</u></b>\nAdd "<code>pswd: xxx</code>" after the link'
         sendMessage(help_msg, bot, message)
 
