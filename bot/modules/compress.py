@@ -225,7 +225,7 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
             deleteMessage(bot, msg)
         except DDLExceptionHandler as e:
             deleteMessage(bot, msg)
-            LOGGER.error(e)
+            LOGGER.error(str(e))
             return sendMessage(str(e), bot, message)
     listener = CompressListener(bot, message, is_archive, is_extract, pswd)
     if is_gdrive_link(link):

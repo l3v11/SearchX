@@ -21,7 +21,7 @@ from googleapiclient.errors import Error as GCError, HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 from bot import LOGGER, DRIVE_NAMES, DRIVE_IDS, INDEX_URLS, PARENT_ID, \
-    IS_TEAM_DRIVE, TELEGRAPH, USE_SERVICE_ACCOUNTS, INDEX_URL, DEST_DRIVES
+    IS_TEAM_DRIVE, TELEGRAPH, USE_SERVICE_ACCOUNTS, INDEX_URL
 from bot.helper.ext_utils.bot_utils import SetInterval, get_readable_file_size
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.telegram_helper.button_builder import ButtonMaker
@@ -370,7 +370,7 @@ class GoogleDriveHelper:
             if self.__is_cancelled:
                 break
 
-    def clone(self, link, key):
+    def clone(self, link, dest_id):
         self.__is_cloning = True
         self.__start_time = time.time()
         self.__total_files = 0
@@ -383,12 +383,9 @@ class GoogleDriveHelper:
             msg = "Drive ID not found"
             LOGGER.error(msg)
             return msg
-        if key in DEST_DRIVES:
-            parent_id = DEST_DRIVES[key][0]
-            try:
-                index_url = DEST_DRIVES[key][1]
-            except IndexError:
-                index_url = None
+        if dest_id != "":
+            parent_id = dest_id
+            index_url = None
         msg = ""
         try:
             meta = self.__getFileMetadata(file_id)

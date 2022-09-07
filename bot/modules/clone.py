@@ -20,17 +20,17 @@ def cloneNode(update, context):
     args = update.message.text.split()
     reply_to = update.message.reply_to_message
     link = ''
-    key = ''
+    dest_id = ''
     if len(args) > 1:
         link = args[1].strip()
         try:
-            key = args[2].strip()
+            dest_id = args[2].strip()
         except IndexError:
             pass
     if reply_to:
         link = reply_to.text.split(maxsplit=1)[0].strip()
         try:
-            key = args[1].strip()
+            dest_id = args[1].strip()
         except IndexError:
             pass
     is_appdrive = is_appdrive_link(link)
@@ -47,7 +47,7 @@ def cloneNode(update, context):
             deleteMessage(context.bot, msg)
         except DDLExceptionHandler as e:
             deleteMessage(context.bot, msg)
-            LOGGER.error(e)
+            LOGGER.error(str(e))
             return sendMessage(str(e), context.bot, update.message)
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Checking:</b> <code>{link}</code>", context.bot, update.message)
@@ -67,7 +67,7 @@ def cloneNode(update, context):
         if files <= 20:
             msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update.message)
             LOGGER.info(f"Cloning: {link}")
-            result = gd.clone(link, key)
+            result = gd.clone(link, dest_id)
             deleteMessage(context.bot, msg)
         else:
             drive = GoogleDriveHelper(name)
@@ -77,7 +77,7 @@ def cloneNode(update, context):
                 download_dict[update.message.message_id] = clone_status
             sendStatusMessage(update.message, context.bot)
             LOGGER.info(f"Cloning: {link}")
-            result = drive.clone(link, key)
+            result = drive.clone(link, dest_id)
             with download_dict_lock:
                 del download_dict[update.message.message_id]
                 count = len(download_dict)
@@ -101,7 +101,6 @@ def cloneNode(update, context):
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
         help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
-        help_msg += '\n\n<b><u>Set Destination Drive</u></b>\nAdd &lt;key&gt; after the link'
         sendMessage(help_msg, context.bot, update.message)
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,

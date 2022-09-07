@@ -54,7 +54,6 @@ DRIVE_NAMES = []
 DRIVE_IDS = []
 INDEX_URLS = []
 TELEGRAPH = []
-DEST_DRIVES = {}
 
 AUTHORIZED_CHATS = set()
 
@@ -212,22 +211,6 @@ except:
     pass
 
 try:
-    DEST_LIST_URL = get_config('DEST_LIST_URL')
-    if len(DEST_LIST_URL) == 0:
-        raise KeyError
-    try:
-        res = requests.get(DEST_LIST_URL)
-        if res.status_code == 200:
-            with open('dest_list', 'wb+') as f:
-                f.write(res.content)
-        else:
-            LOGGER.error(f"Failed to load dest_list file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"DEST_LIST_URL: {e}")
-except:
-    pass
-
-try:
     APPDRIVE_EMAIL = get_config('APPDRIVE_EMAIL')
     APPDRIVE_PASS = get_config('APPDRIVE_PASS')
     if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
@@ -257,13 +240,6 @@ if os.path.exists('drive_list'):
                 INDEX_URLS.append(temp[2])
             except IndexError:
                 INDEX_URLS.append(None)
-
-if os.path.exists('dest_list'):
-    with open('dest_list', 'r+') as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip().split()
-            DEST_DRIVES[line[0]] = line[1:]
 
 def create_account(sname):
     try:

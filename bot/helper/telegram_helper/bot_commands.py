@@ -13,7 +13,6 @@ class _BotCommands:
         self.AuthorizeCommand = 'authorize'
         self.UnauthorizeCommand = 'unauthorize'
         self.UsersCommand = 'users'
-        self.ListKeysCommand = 'listkeys'
         self.ShellCommand = 'shell'
         self.EvalCommand = 'eval'
         self.ExecCommand = 'exec'
