@@ -1,5 +1,4 @@
 import logging
-import os
 import random
 import string
 import requests
@@ -9,6 +8,7 @@ import time
 
 import telegram.ext as tg
 
+from os import path, remove, getenv
 from dotenv import load_dotenv
 from telegraph import Telegraph
 from telegraph.exceptions import RetryAfterError
@@ -18,7 +18,7 @@ socket.setdefaulttimeout(600)
 
 botStartTime = time.time()
 
-if os.path.exists('log.txt'):
+if path.exists('log.txt'):
     with open('log.txt', 'r+') as f:
         f.truncate(0)
 
@@ -28,32 +28,23 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 LOGGER = logging.getLogger(__name__)
 
-def get_config(name: str):
-    return os.environ[name]
-
+CONFIG_ENV_URL = getenv('CONFIG_ENV_URL')
 try:
-    CONFIG_ENV_URL = get_config('CONFIG_ENV_URL')
-    if len(CONFIG_ENV_URL) == 0:
-        raise KeyError
-    try:
-        res = requests.get(CONFIG_ENV_URL)
-        if res.status_code == 200:
-            with open('config.env', 'wb+') as f:
-                f.write(res.content)
-        else:
-            LOGGER.error(f"Failed to load config.env file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"CONFIG_ENV_URL: {e}")
-except:
-    pass
+    if not CONFIG_ENV_URL:
+        raise ValueError("CONFIG_ENV_URL Not Found !")
+    res = requests.get(CONFIG_ENV_URL)
+    if res.status_code == 200:
+        with open('config.env', 'wb+') as f:
+            f.write(res.content)
+    else:
+        LOGGER.error(f"Failed to load config.env file [{res.status_code}]")
+except Exception as e:
+    LOGGER.error(f"CONFIG_ENV_URL: {e}")
 
 load_dotenv('config.env', override=True)
 
-Interval = []
-DRIVE_NAMES = []
-DRIVE_IDS = []
-INDEX_URLS = []
-TELEGRAPH = []
+Interval, TELEGRAPH = [], []
+DRIVE_NAMES, DRIVE_IDS, INDEX_URLS = [], [], []
 
 AUTHORIZED_CHATS = set()
 
@@ -66,174 +57,108 @@ download_dict = {}
 # Value: telegram.Message
 status_reply_dict = {}
 
-try:
-    BOT_TOKEN = get_config('BOT_TOKEN')
-except:
+BOT_TOKEN = getenv('BOT_TOKEN')
+if not BOT_TOKEN:
     LOGGER.error("BOT_TOKEN env variable is missing")
     exit(1)
 
-try:
-    OWNER_ID = int(get_config('OWNER_ID'))
-except:
+OWNER_ID = getenv('OWNER_ID')
+if not OWNER_ID:
     LOGGER.error("OWNER_ID env variable is missing")
     exit(1)
+OWNER_ID = int(OWNER_ID)
 
-try:
-    PARENT_ID = get_config('DRIVE_FOLDER_ID')
-except:
+PARENT_ID = getenv('DRIVE_FOLDER_ID')
+if not PARENT_ID:
     LOGGER.error("DRIVE_FOLDER_ID env variable is missing")
     exit(1)
 
-try:
-    DOWNLOAD_DIR = get_config('DOWNLOAD_DIR')
-    if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
-except:
+DOWNLOAD_DIR = getenv('DOWNLOAD_DIR')
+if not DOWNLOAD_DIR:
     LOGGER.error("DOWNLOAD_DIR env variable is missing")
     exit(1)
+if not DOWNLOAD_DIR.endswith("/"):
+    DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
-try:
-    users = get_config('AUTHORIZED_CHATS')
-    users = users.split()
-    for user in users:
-        AUTHORIZED_CHATS.add(int(user.strip()))
-except:
-    pass
+users = getenv('AUTHORIZED_CHATS')
+if users:
+    AUTHORIZED_CHATS.update([int(user.strip()) for user in users.split()])
 
-try:
-    DATABASE_URL = get_config('DATABASE_URL')
-    if len(DATABASE_URL) == 0:
-        raise KeyError
-except:
-    DATABASE_URL = None
+DATABASE_URL = getenv('DATABASE_URL')
 
-try:
-    IS_TEAM_DRIVE = get_config('IS_TEAM_DRIVE')
-    IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
-except:
-    IS_TEAM_DRIVE = False
+IS_TEAM_DRIVE = str(getenv('IS_TEAM_DRIVE', False)).lower() == "true"
 
-try:
-    USE_SERVICE_ACCOUNTS = get_config('USE_SERVICE_ACCOUNTS')
-    USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
-except:
-    USE_SERVICE_ACCOUNTS = False
+USE_SERVICE_ACCOUNTS = str(getenv('USE_SERVICE_ACCOUNTS', False)).lower() == 'true'
 
-try:
-    STATUS_UPDATE_INTERVAL = get_config('STATUS_UPDATE_INTERVAL')
-    if len(STATUS_UPDATE_INTERVAL) == 0:
-        raise KeyError
-    STATUS_UPDATE_INTERVAL = int(STATUS_UPDATE_INTERVAL)
-except:
-    STATUS_UPDATE_INTERVAL = 10
+STATUS_UPDATE_INTERVAL = int(getenv('STATUS_UPDATE_INTERVAL', 10))
 
-try:
-    TELEGRAPH_ACCS = get_config('TELEGRAPH_ACCS')
-    if len(TELEGRAPH_ACCS) == 0:
-        raise KeyError
-    TELEGRAPH_ACCS = int(TELEGRAPH_ACCS)
-except:
-    TELEGRAPH_ACCS = 1
+TELEGRAPH_ACCS = int(getenv('TELEGRAPH_ACCS', 1))
 
-try:
-    INDEX_URL = get_config('INDEX_URL').rstrip("/")
-    if len(INDEX_URL) == 0:
-        raise KeyError
-except:
-    INDEX_URL = None
+INDEX_URL = str(getenv('INDEX_URL')).rstrip("/")
 
-try:
-    CLONE_LIMIT = get_config('CLONE_LIMIT')
-    if len(CLONE_LIMIT) == 0:
-        raise KeyError
+CLONE_LIMIT = getenv('CLONE_LIMIT')
+if CLONE_LIMIT:
     CLONE_LIMIT = float(CLONE_LIMIT)
-except:
-    CLONE_LIMIT = None
 
-try:
-    COMPRESS_LIMIT = get_config('COMPRESS_LIMIT')
-    if len(COMPRESS_LIMIT) == 0:
-        raise KeyError
+COMPRESS_LIMIT = getenv('COMPRESS_LIMIT')
+if COMPRESS_LIMIT:
     COMPRESS_LIMIT = float(COMPRESS_LIMIT)
-except:
-    COMPRESS_LIMIT = None
 
+TOKEN_JSON_URL = getenv('TOKEN_JSON_URL')
 try:
-    TOKEN_JSON_URL = get_config('TOKEN_JSON_URL')
-    if len(TOKEN_JSON_URL) == 0:
-        raise KeyError
-    try:
-        res = requests.get(TOKEN_JSON_URL)
-        if res.status_code == 200:
-            with open('token.json', 'wb+') as f:
-                f.write(res.content)
-        else:
-            LOGGER.error(f"Failed to load token.json file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"TOKEN_JSON_URL: {e}")
-except:
-    pass
+    if not TOKEN_JSON_URL:
+        raise ValueError("TOKEN_JSON_URL Not Found !")
+    res = requests.get(TOKEN_JSON_URL)
+    if res.status_code == 200:
+        with open('token.json', 'wb+') as f:
+            f.write(res.content)
+    else:
+        LOGGER.error(f"Failed to load token.json file [{res.status_code}]")
+except Exception as e:
+    LOGGER.error(f"TOKEN_JSON_URL: {e}")
 
+ACCOUNTS_ZIP_URL = getenv('ACCOUNTS_ZIP_URL')
 try:
-    ACCOUNTS_ZIP_URL = get_config('ACCOUNTS_ZIP_URL')
-    if len(ACCOUNTS_ZIP_URL) == 0:
-        raise KeyError
-    try:
-        res = requests.get(ACCOUNTS_ZIP_URL)
-        if res.status_code == 200:
-            with open('accounts.zip', 'wb+') as f:
-                f.write(res.content)
-        else:
-            LOGGER.error(f"Failed to load accounts.zip file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"ACCOUNTS_ZIP_URL: {e}")
-        raise KeyError
-    subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
-    subprocess.run(["chmod", "-R", "777", "accounts"])
-    os.remove("accounts.zip")
-except:
-    pass
+    if not ACCOUNTS_ZIP_URL:
+        raise ValueError("ACCOUNTS_ZIP_URL Not Found !")
+    res = requests.get(ACCOUNTS_ZIP_URL)
+    if res.status_code == 200:
+        with open('accounts.zip', 'wb+') as f:
+            f.write(res.content)
+    else:
+        LOGGER.error(f"Failed to load accounts.zip file [{res.status_code}]")
+    
+    if path.exists("accounts.zip"):
+        subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
+        subprocess.run(["chmod", "-R", "777", "accounts"])
+        remove("accounts.zip")
+except Exception as e:
+    LOGGER.error(f"ACCOUNTS_ZIP_URL: {e}")
 
+DRIVE_LIST_URL = getenv('DRIVE_LIST_URL')
 try:
-    DRIVE_LIST_URL = get_config('DRIVE_LIST_URL')
-    if len(DRIVE_LIST_URL) == 0:
-        raise KeyError
-    try:
-        res = requests.get(DRIVE_LIST_URL)
-        if res.status_code == 200:
-            with open('drive_list', 'wb+') as f:
-                f.write(res.content)
-        else:
-            LOGGER.error(f"Failed to load drive_list file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"DRIVE_LIST_URL: {e}")
-except:
-    pass
+    if not DRIVE_LIST_URL:
+        raise ValueError("DRIVE_LIST_URL Not Found !")
+    res = requests.get(DRIVE_LIST_URL)
+    if res.status_code == 200:
+        with open('drive_list', 'wb+') as f:
+            f.write(res.content)
+    else:
+        LOGGER.error(f"Failed to load drive_list file [{res.status_code}]")
+except Exception as e:
+    LOGGER.error(f"DRIVE_LIST_URL: {e}")
 
-try:
-    APPDRIVE_EMAIL = get_config('APPDRIVE_EMAIL')
-    APPDRIVE_PASS = get_config('APPDRIVE_PASS')
-    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
-        raise KeyError
-except:
-    APPDRIVE_EMAIL = None
-    APPDRIVE_PASS = None
+APPDRIVE_EMAIL, APPDRIVE_PASS = getenv('APPDRIVE_EMAIL'), getenv('APPDRIVE_PASS')
 
-try:
-    GDTOT_CRYPT = get_config('GDTOT_CRYPT')
-    if len(GDTOT_CRYPT) == 0:
-        raise KeyError
-except:
-    GDTOT_CRYPT = None
+GDTOT_CRYPT = getenv('GDTOT_CRYPT')
 
-if os.path.exists('drive_list'):
+if path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
         lines = f.readlines()
         for line in lines:
             try:
                 temp = line.strip().split()
-                DRIVE_NAMES.append(temp[0].replace("_", " "))
-                DRIVE_IDS.append(temp[1])
+                DRIVE_NAMES.append(temp[0].replace("_", " ")), DRIVE_IDS.append(temp[1])
             except:
                 pass
             try:
@@ -253,7 +178,7 @@ def create_account(sname):
         time.sleep(e.retry_after)
         create_account(sname)
 
-for i in range(TELEGRAPH_ACCS):
+for _ in range(TELEGRAPH_ACCS):
     sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
     create_account(sname)
 LOGGER.info(f"Generated {TELEGRAPH_ACCS} telegraph tokens")
