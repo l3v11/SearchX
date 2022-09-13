@@ -16,7 +16,7 @@ class TaskStatus:
     STATUS_CLONING = "Cloning"
     STATUS_DOWNLOADING = "Downloading"
     STATUS_UPLOADING = "Uploading"
-    STATUS_ARCHIVING = "Archiving"
+    STATUS_COMPRESSING = "Compressing"
     STATUS_EXTRACTING = "Extracting"
 
 class SetInterval:

@@ -18,8 +18,8 @@ def sendMessage(text: str, bot, message: Message):
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
         return sendMessage(text, bot, message)
-    except Exception as e:
-        LOGGER.error(str(e))
+    except Exception as err:
+        LOGGER.error(str(err))
         return
 
 def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMarkup):
@@ -32,8 +32,8 @@ def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMar
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
         return sendMarkup(text, bot, message, reply_markup)
-    except Exception as e:
-        LOGGER.error(str(e))
+    except Exception as err:
+        LOGGER.error(str(err))
         return
 
 def editMessage(text: str, message: Message, reply_markup=None):
@@ -46,16 +46,16 @@ def editMessage(text: str, message: Message, reply_markup=None):
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
         return editMessage(text, message, reply_markup)
-    except Exception as e:
-        LOGGER.error(str(e))
-        return str(e)
+    except Exception as err:
+        LOGGER.error(str(err))
+        return str(err)
 
 def deleteMessage(bot, message: Message):
     try:
         bot.deleteMessage(chat_id=message.chat.id,
                            message_id=message.message_id)
-    except Exception as e:
-        LOGGER.error(str(e))
+    except Exception as err:
+        LOGGER.error(str(err))
 
 def sendLogFile(bot, message: Message):
     with open('log.txt', 'rb') as f:
@@ -69,12 +69,12 @@ def delete_all_messages():
             try:
                 deleteMessage(bot, data[0])
                 del status_reply_dict[data[0].chat.id]
-            except Exception as e:
-                LOGGER.error(str(e))
+            except Exception as err:
+                LOGGER.error(str(err))
 
 def update_all_messages(force=False):
     with status_reply_dict_lock:
-        if not force and (not status_reply_dict or not Interval or time.time() - list(status_reply_dict.values())[0][1] < 3):
+        if not status_reply_dict or not Interval or (not force and time.time() - list(status_reply_dict.values())[0][1] < 3):
             return
         for chat_id in status_reply_dict:
             status_reply_dict[chat_id][1] = time.time()

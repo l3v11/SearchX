@@ -45,10 +45,10 @@ def cloneNode(update, context):
             if is_gdtot:
                 link = gdtot(link)
             deleteMessage(context.bot, msg)
-        except DDLExceptionHandler as e:
+        except DDLExceptionHandler as err:
             deleteMessage(context.bot, msg)
-            LOGGER.error(str(e))
-            return sendMessage(str(e), context.bot, update.message)
+            LOGGER.error(err)
+            return sendMessage(str(err), context.bot, update.message)
     if is_gdrive_link(link):
         msg = sendMessage(f"<b>Checking:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Checking: {link}")

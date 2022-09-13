@@ -7,7 +7,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.ext_utils.database import DatabaseHelper
 
 def authorize(update, context):
-    user_id = ""
+    user_id = ''
     reply_message = update.message.reply_to_message
     if len(context.args) == 1:
         user_id = int(context.args[0])
@@ -35,7 +35,7 @@ def authorize(update, context):
     sendMessage(msg, context.bot, update.message)
 
 def unauthorize(update, context):
-    user_id = ""
+    user_id = ''
     reply_message = update.message.reply_to_message
     if len(context.args) == 1:
         user_id = int(context.args[0])
@@ -62,17 +62,17 @@ def unauthorize(update, context):
             msg = 'Already unauthorized'
     sendMessage(msg, context.bot, update.message)
 
-def auth_chats(update, context):
+def auth_users(update, context):
     users = ''
     users += '\n'.join(f"<code>{uid}</code>" for uid in AUTHORIZED_CHATS)
-    msg = f'<b><u>Authorized Chats</u></b>\n{users}'
+    msg = f'<b><u>Authorized Users</u></b>\n{users}'
     sendMessage(msg, context.bot, update.message)
 
 authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
                                    filters=CustomFilters.owner_filter, run_async=True)
 unauthorize_handler = CommandHandler(BotCommands.UnauthorizeCommand, unauthorize,
-                                    filters=CustomFilters.owner_filter, run_async=True)
-auth_handler = CommandHandler(BotCommands.UsersCommand, auth_chats,
+                                     filters=CustomFilters.owner_filter, run_async=True)
+auth_handler = CommandHandler(BotCommands.UsersCommand, auth_users,
                               filters=CustomFilters.owner_filter, run_async=True)
 dispatcher.add_handler(authorize_handler)
 dispatcher.add_handler(unauthorize_handler)

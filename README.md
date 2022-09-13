@@ -18,12 +18,13 @@ SearchX is a multipurpose Telegram bot written in Python for Google Drive
 
 - Search data in Google Drive
 - Clone data from Google Drive, AppDrive and GDToT
-- Archive data from Google Drive, AppDrive and GDToT
+- Compress data from Google Drive, AppDrive and GDToT
 - Extract data from Google Drive, AppDrive and GDToT
 - Count data from Google Drive
 - Delete data from Google Drive
 - Set data permission in Google Drive
-- Size Limit support for Clone, Archive and Extraction tasks
+- Size Limit support for Clone, Compression and Extraction tasks
+- Destination change support for Clone tasks
 - MongoDB support for storing the list of authorized users
 - Index Link support
 - Multi-token telegraph support
@@ -54,7 +55,7 @@ This list of commands is supported by the bot
 start - Start the bot
 find - Search data in Google Drive
 clone - Clone data to Google Drive
-archive - Archive data to Google Drive
+compress - Compress data to Google Drive
 extract - Extract data to Google Drive
 count - Count data from Google Drive
 cancel - Cancel a task

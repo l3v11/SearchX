@@ -1,7 +1,7 @@
 import random
 import string
 
-from bot import LOGGER, COMPRESS_LIMIT, download_dict, download_dict_lock
+from bot import LOGGER, ARCHIVE_LIMIT, download_dict, download_dict_lock
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.status_utils.download_status import DownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, sendStatusMessage
@@ -17,11 +17,11 @@ def add_gd_download(link, path, listener, customname, is_appdrive, appdict, is_g
         return sendMessage(res, listener.bot, listener.message)
     if customname:
         name = customname
-    if COMPRESS_LIMIT is not None:
-        if size > COMPRESS_LIMIT * 1024**3:
+    if ARCHIVE_LIMIT is not None:
+        if size > ARCHIVE_LIMIT * 1024**3:
             msg2 = f"<b>Name:</b> <code>{name}</code>"
             msg2 += f"\n<b>Size:</b> {get_readable_file_size(size)}"
-            msg2 += f"\n<b>Limit:</b> {COMPRESS_LIMIT} GB"
+            msg2 += f"\n<b>Limit:</b> {ARCHIVE_LIMIT} GB"
             msg2 += "\n\n<b>⚠️ Task failed</b>"
             return sendMessage(msg2, listener.bot, listener.message)
     LOGGER.info(f"Downloading: {name}")

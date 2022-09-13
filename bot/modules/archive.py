@@ -13,21 +13,21 @@ from bot.helper.download_utils.ddl_generator import appdrive, gdtot
 from bot.helper.download_utils.gd_downloader import add_gd_download
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, is_appdrive_link, is_gdtot_link
-from bot.helper.ext_utils.exceptions import CompressExceptionHandler, DDLExceptionHandler
+from bot.helper.ext_utils.exceptions import ArchiveExceptionHandler, DDLExceptionHandler
 from bot.helper.ext_utils.fs_utils import clean_download, clean_target, get_base_name, get_path_size
-from bot.helper.status_utils.archive_status import ArchiveStatus
+from bot.helper.status_utils.compress_status import CompressStatus
 from bot.helper.status_utils.extract_status import ExtractStatus
 from bot.helper.status_utils.upload_status import UploadStatus
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, delete_all_messages, update_all_messages
 
-class CompressListener:
-    def __init__(self, bot, message, is_archive=False, is_extract=False, pswd=None):
+class ArchiveListener:
+    def __init__(self, bot, message, is_compress=False, is_extract=False, pswd=None):
         self.bot = bot
         self.message = message
         self.uid = message.message_id
-        self.is_archive = is_archive
+        self.is_compress = is_compress
         self.is_extract = is_extract
         self.pswd = pswd
         self.dir = f'{DOWNLOAD_DIR}{self.uid}'
@@ -48,11 +48,11 @@ class CompressListener:
             gid = download.gid()
         m_path = f'{self.dir}/{name}'
         size = get_path_size(m_path)
-        if self.is_archive:
+        if self.is_compress:
             path = f"{m_path}.zip"
             with download_dict_lock:
-                download_dict[self.uid] = ArchiveStatus(name, size, gid, self)
-            LOGGER.info(f"Archiving: {name}")
+                download_dict[self.uid] = CompressStatus(name, size, gid, self)
+            LOGGER.info(f"Compressing: {name}")
             if self.pswd is not None:
                 self.suproc = subprocess.Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
             else:
@@ -107,8 +107,8 @@ class CompressListener:
                     else:
                         LOGGER.error("Failed to extract the archive")
                         path = m_path
-            except CompressExceptionHandler as err:
-                LOGGER.info(err)
+            except ArchiveExceptionHandler as err:
+                LOGGER.error(err)
                 path = m_path
         else:
             path = m_path
@@ -126,7 +126,7 @@ class CompressListener:
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
         msg = f'<b>Name:</b> <code>{escape(name)}</code>'
         msg += f'\n<b>Size:</b> {size}'
-        msg += f'\n<b>Type: </b>{typ}'
+        msg += f'\n<b>Type:</b> {typ}'
         if typ == "Folder":
             msg += f'\n<b>SubFolders:</b> {folders}'
             msg += f'\n<b>Files:</b> {files}'
@@ -144,8 +144,8 @@ class CompressListener:
         with download_dict_lock:
             try:
                 del download_dict[self.uid]
-            except Exception as e:
-                LOGGER.error(str(e))
+            except Exception as err:
+                LOGGER.error(err)
             count = len(download_dict)
         if count == 0:
             self.clean()
@@ -158,8 +158,8 @@ class CompressListener:
         with download_dict_lock:
             try:
                 del download_dict[self.uid]
-            except Exception as e:
-                LOGGER.error(str(e))
+            except Exception as err:
+                LOGGER.error(err)
             count = len(download_dict)
         sendMessage(error, self.bot, self.message)
         if count == 0:
@@ -173,8 +173,8 @@ class CompressListener:
         with download_dict_lock:
             try:
                 del download_dict[self.uid]
-            except Exception as e:
-                LOGGER.error(str(e))
+            except Exception as err:
+                LOGGER.error(err)
             count = len(download_dict)
         sendMessage(error, self.bot, self.message)
         if count == 0:
@@ -182,7 +182,7 @@ class CompressListener:
         else:
             update_all_messages()
 
-def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
+def _archive(bot, message, is_compress=False, is_extract=False):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_arg = mesg[0].split('|', maxsplit=1)
@@ -223,11 +223,11 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
             if is_gdtot:
                 link = gdtot(link)
             deleteMessage(bot, msg)
-        except DDLExceptionHandler as e:
+        except DDLExceptionHandler as err:
             deleteMessage(bot, msg)
-            LOGGER.error(str(e))
-            return sendMessage(str(e), bot, message)
-    listener = CompressListener(bot, message, is_archive, is_extract, pswd)
+            LOGGER.error(err)
+            return sendMessage(str(err), bot, message)
+    listener = ArchiveListener(bot, message, is_compress, is_extract, pswd)
     if is_gdrive_link(link):
         threading.Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_appdrive, appdict, is_gdtot)).start()
     else:
@@ -238,15 +238,15 @@ def _compress(bot, message, is_archive=False, is_extract=False, pswd=None):
         sendMessage(help_msg, bot, message)
 
 
-def archive_data(update, context):
-    _compress(context.bot, update.message, is_archive=True)
+def compress_data(update, context):
+    _archive(context.bot, update.message, is_compress=True)
 
 def extract_data(update, context):
-    _compress(context.bot, update.message, is_extract=True)
+    _archive(context.bot, update.message, is_extract=True)
 
-archive_handler = CommandHandler(BotCommands.ArchiveCommand, archive_data,
-                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+compress_handler = CommandHandler(BotCommands.CompressCommand, compress_data,
+                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 extract_handler = CommandHandler(BotCommands.ExtractCommand, extract_data,
                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-dispatcher.add_handler(archive_handler)
+dispatcher.add_handler(compress_handler)
 dispatcher.add_handler(extract_handler)

@@ -61,4 +61,4 @@ class ExtractStatus:
         LOGGER.info(f"Cancelling extract: {self.__name}")
         if self.__listener.suproc is not None:
             self.__listener.suproc.kill()
-        self.__listener.onUploadError("The extract task has been cancelled")
+        self.__listener.onUploadError("The extraction task has been cancelled")

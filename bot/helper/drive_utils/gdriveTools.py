@@ -432,7 +432,7 @@ class GoogleDriveHelper:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-                    return self.clone(link, key)
+                    return self.clone(link, dest_id)
                 msg = "File not found"
             else:
                 msg = err
@@ -591,7 +591,7 @@ class GoogleDriveHelper:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
-            self.__listener.onUploadError(str(err))
+            self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
             self.__updater.cancel()
@@ -724,9 +724,9 @@ class GoogleDriveHelper:
                     author_name="Levi",
                     author_url="https://t.me/l3v11",
                     html_content=content)['path'])
-        except RetryAfterError as e:
-            LOGGER.info(f"Cooldown: {e.retry_after} seconds")
-            time.sleep(e.retry_after)
+        except RetryAfterError as err:
+            LOGGER.info(f"Cooldown: {err.retry_after} seconds")
+            time.sleep(err.retry_after)
             self.__create_page(acc, content)
 
     def __edit_page(self, acc, content, path):
@@ -737,13 +737,12 @@ class GoogleDriveHelper:
                 author_name="Levi",
                 author_url="https://t.me/l3v11",
                 html_content=content)
-        except RetryAfterError as e:
-            LOGGER.info(f"Cooldown: {e.retry_after} seconds")
-            time.sleep(e.retry_after)
+        except RetryAfterError as err:
+            LOGGER.info(f"Cooldown: {err.retry_after} seconds")
+            time.sleep(err.retry_after)
             self.__edit_page(acc, content, path)
 
     def __receive_callback(self, request_id, response, exception):
-        # request_id = order number of request = shared drive index (1 based)
         if exception is not None:
             exception = str(exception).replace('>', '').replace('<', '')
             LOGGER.error(exception)
@@ -809,7 +808,7 @@ class GoogleDriveHelper:
                 msg = f'<h4>Query: {file_name}</h4><br>'
                 add_title_msg = False
             msg += f"╾────────────╼<br><b>{DRIVE_NAMES[index]}</b><br>╾────────────╼<br>"
-            # Detect whether the current entity is a folder or file
+            # Detect whether the current entity is a folder or a file
             for file in self.response[files]["files"]:
                 if file.get('mimeType') == self.__G_DRIVE_DIR_MIME_TYPE:
                     msg += f"🗂️<code>{file.get('name')}</code> <b>(folder)</b><br>" \

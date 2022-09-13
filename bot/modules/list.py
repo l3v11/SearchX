@@ -20,9 +20,9 @@ def list_drive(update, context):
         gd = GoogleDriveHelper()
         try:
             msg, button = gd.drive_list(query)
-        except Exception as e:
+        except Exception as err:
             msg, button = "Internal error", None
-            LOGGER.exception(e)
+            LOGGER.error(err)
         editMessage(msg, reply, button)
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a Query along with command'

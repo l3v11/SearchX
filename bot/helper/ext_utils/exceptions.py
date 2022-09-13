@@ -1,4 +1,4 @@
-class CompressExceptionHandler(Exception):
+class ArchiveExceptionHandler(Exception):
     pass
 
 class DDLExceptionHandler(Exception):

@@ -7,7 +7,7 @@ from sys import executable
 from telegram.ext import CommandHandler
 
 from bot import bot, LOGGER, botStartTime, AUTHORIZED_CHATS, TELEGRAPH, Interval, dispatcher, updater
-from bot.modules import auth, cancel, clone, compress, count, delete, eval, list, permission, shell, status
+from bot.modules import archive, auth, cancel, clone, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -72,7 +72,7 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;dest_id&gt;: Clone data from Google Drive, AppDrive and GDToT (Destination ID optional)
 <br><br>
-• <b>/{BotCommands.ArchiveCommand}</b> &lt;url&gt;: Archive data from Google Drive, AppDrive and GDToT
+• <b>/{BotCommands.CompressCommand}</b> &lt;url&gt;: Compress data from Google Drive, AppDrive and GDToT
 <br><br>
 • <b>/{BotCommands.ExtractCommand}</b> &lt;url&gt;: Extract data from Google Drive, AppDrive and GDToT
 <br><br>

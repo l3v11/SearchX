@@ -151,12 +151,12 @@ except:
     CLONE_LIMIT = None
 
 try:
-    COMPRESS_LIMIT = get_config('COMPRESS_LIMIT')
-    if len(COMPRESS_LIMIT) == 0:
+    ARCHIVE_LIMIT = get_config('ARCHIVE_LIMIT')
+    if len(ARCHIVE_LIMIT) == 0:
         raise KeyError
-    COMPRESS_LIMIT = float(COMPRESS_LIMIT)
+    ARCHIVE_LIMIT = float(ARCHIVE_LIMIT)
 except:
-    COMPRESS_LIMIT = None
+    ARCHIVE_LIMIT = None
 
 try:
     TOKEN_JSON_URL = get_config('TOKEN_JSON_URL')
