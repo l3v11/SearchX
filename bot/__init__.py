@@ -28,24 +28,17 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 LOGGER = logging.getLogger(__name__)
 
-def get_config(name: str):
-    return os.environ[name]
-
-try:
-    CONFIG_ENV_URL = get_config('CONFIG_ENV_URL')
-    if len(CONFIG_ENV_URL) == 0:
-        raise KeyError
+CONFIG_ENV_URL = os.environ.get('CONFIG_ENV_URL', '')
+if len(CONFIG_ENV_URL) != 0:
     try:
         res = requests.get(CONFIG_ENV_URL)
         if res.status_code == 200:
             with open('config.env', 'wb+') as f:
                 f.write(res.content)
         else:
-            LOGGER.error(f"Failed to load config.env file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"CONFIG_ENV_URL: {e}")
-except:
-    pass
+            LOGGER.error(f"Failed to load the config.env file [{res.status_code}]")
+    except Exception as err:
+        LOGGER.error(f"CONFIG_ENV_URL: {err}")
 
 load_dotenv('config.env', override=True)
 
@@ -55,7 +48,8 @@ DRIVE_IDS = []
 INDEX_URLS = []
 TELEGRAPH = []
 
-AUTHORIZED_CHATS = set()
+def get_config(name: str):
+    return os.environ[name]
 
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
@@ -92,153 +86,97 @@ except:
     LOGGER.error("DOWNLOAD_DIR env variable is missing")
     exit(1)
 
-try:
-    users = get_config('AUTHORIZED_CHATS')
-    users = users.split()
-    for user in users:
-        AUTHORIZED_CHATS.add(int(user.strip()))
-except:
-    pass
+users = os.environ.get('AUTHORIZED_USERS', '')
+if len(users) != 0:
+    AUTHORIZED_USERS = {int(user.strip()) for user in users.split()}
+else:
+    AUTHORIZED_USERS = set()
 
-try:
-    DATABASE_URL = get_config('DATABASE_URL')
-    if len(DATABASE_URL) == 0:
-        raise KeyError
-except:
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+if len(DATABASE_URL) == 0:
     DATABASE_URL = None
 
-try:
-    IS_TEAM_DRIVE = get_config('IS_TEAM_DRIVE')
-    IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
-except:
-    IS_TEAM_DRIVE = False
+IS_TEAM_DRIVE = os.environ.get('IS_TEAM_DRIVE', '')
+IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
-try:
-    USE_SERVICE_ACCOUNTS = get_config('USE_SERVICE_ACCOUNTS')
-    USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
-except:
-    USE_SERVICE_ACCOUNTS = False
+USE_SERVICE_ACCOUNTS = os.environ.get('USE_SERVICE_ACCOUNTS', '')
+USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
 
-try:
-    STATUS_UPDATE_INTERVAL = get_config('STATUS_UPDATE_INTERVAL')
-    if len(STATUS_UPDATE_INTERVAL) == 0:
-        raise KeyError
-    STATUS_UPDATE_INTERVAL = int(STATUS_UPDATE_INTERVAL)
-except:
-    STATUS_UPDATE_INTERVAL = 10
+STATUS_UPDATE_INTERVAL = os.environ.get('STATUS_UPDATE_INTERVAL', '')
+STATUS_UPDATE_INTERVAL = 10 if len(STATUS_UPDATE_INTERVAL) == 0 else int(STATUS_UPDATE_INTERVAL)
 
-try:
-    TELEGRAPH_ACCS = get_config('TELEGRAPH_ACCS')
-    if len(TELEGRAPH_ACCS) == 0:
-        raise KeyError
-    TELEGRAPH_ACCS = int(TELEGRAPH_ACCS)
-except:
-    TELEGRAPH_ACCS = 1
+TELEGRAPH_ACCS = os.environ.get('TELEGRAPH_ACCS', '')
+TELEGRAPH_ACCS = 1 if len(TELEGRAPH_ACCS) == 0 else int(TELEGRAPH_ACCS)
 
-try:
-    INDEX_URL = get_config('INDEX_URL').rstrip("/")
-    if len(INDEX_URL) == 0:
-        raise KeyError
-except:
+INDEX_URL = os.environ.get('INDEX_URL', '').rstrip("/")
+if len(INDEX_URL) == 0:
     INDEX_URL = None
 
-try:
-    CLONE_LIMIT = get_config('CLONE_LIMIT')
-    if len(CLONE_LIMIT) == 0:
-        raise KeyError
-    CLONE_LIMIT = float(CLONE_LIMIT)
-except:
-    CLONE_LIMIT = None
+ARCHIVE_LIMIT = os.environ.get('ARCHIVE_LIMIT', '')
+ARCHIVE_LIMIT = None if len(ARCHIVE_LIMIT) == 0 else float(ARCHIVE_LIMIT)
 
-try:
-    ARCHIVE_LIMIT = get_config('ARCHIVE_LIMIT')
-    if len(ARCHIVE_LIMIT) == 0:
-        raise KeyError
-    ARCHIVE_LIMIT = float(ARCHIVE_LIMIT)
-except:
-    ARCHIVE_LIMIT = None
+CLONE_LIMIT = os.environ.get('CLONE_LIMIT', '')
+CLONE_LIMIT = None if len(CLONE_LIMIT) == 0 else float(CLONE_LIMIT)
 
-try:
-    TOKEN_JSON_URL = get_config('TOKEN_JSON_URL')
-    if len(TOKEN_JSON_URL) == 0:
-        raise KeyError
+TOKEN_JSON_URL = os.environ.get('TOKEN_JSON_URL', '')
+if len(TOKEN_JSON_URL) != 0:
     try:
         res = requests.get(TOKEN_JSON_URL)
         if res.status_code == 200:
             with open('token.json', 'wb+') as f:
                 f.write(res.content)
         else:
-            LOGGER.error(f"Failed to load token.json file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"TOKEN_JSON_URL: {e}")
-except:
-    pass
+            LOGGER.error(f"Failed to load the token.json file [{res.status_code}]")
+    except Exception as err:
+        LOGGER.error(f"TOKEN_JSON_URL: {err}")
 
-try:
-    ACCOUNTS_ZIP_URL = get_config('ACCOUNTS_ZIP_URL')
-    if len(ACCOUNTS_ZIP_URL) == 0:
-        raise KeyError
+ACCOUNTS_ZIP_URL = os.environ.get('ACCOUNTS_ZIP_URL', '')
+if len(ACCOUNTS_ZIP_URL) != 0:
     try:
         res = requests.get(ACCOUNTS_ZIP_URL)
         if res.status_code == 200:
             with open('accounts.zip', 'wb+') as f:
                 f.write(res.content)
+            subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
+            subprocess.run(["chmod", "-R", "777", "accounts"])
+            os.remove("accounts.zip")
         else:
-            LOGGER.error(f"Failed to load accounts.zip file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"ACCOUNTS_ZIP_URL: {e}")
-        raise KeyError
-    subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
-    subprocess.run(["chmod", "-R", "777", "accounts"])
-    os.remove("accounts.zip")
-except:
-    pass
+            LOGGER.error(f"Failed to load the accounts.zip file [{res.status_code}]")
+    except Exception as err:
+        LOGGER.error(f"ACCOUNTS_ZIP_URL: {err}")
 
-try:
-    DRIVE_LIST_URL = get_config('DRIVE_LIST_URL')
-    if len(DRIVE_LIST_URL) == 0:
-        raise KeyError
+DRIVE_LIST_URL = os.environ.get('DRIVE_LIST_URL', '')
+if len(DRIVE_LIST_URL) != 0:
     try:
         res = requests.get(DRIVE_LIST_URL)
         if res.status_code == 200:
             with open('drive_list', 'wb+') as f:
                 f.write(res.content)
         else:
-            LOGGER.error(f"Failed to load drive_list file [{res.status_code}]")
-    except Exception as e:
-        LOGGER.error(f"DRIVE_LIST_URL: {e}")
-except:
-    pass
+            LOGGER.error(f"Failed to load the drive_list file [{res.status_code}]")
+    except Exception as err:
+        LOGGER.error(f"DRIVE_LIST_URL: {err}")
 
-try:
-    APPDRIVE_EMAIL = get_config('APPDRIVE_EMAIL')
-    APPDRIVE_PASS = get_config('APPDRIVE_PASS')
-    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
-        raise KeyError
-except:
+APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', '')
+APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', '')
+if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
     APPDRIVE_EMAIL = None
     APPDRIVE_PASS = None
 
-try:
-    GDTOT_CRYPT = get_config('GDTOT_CRYPT')
-    if len(GDTOT_CRYPT) == 0:
-        raise KeyError
-except:
+GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', '')
+if len(GDTOT_CRYPT) == 0:
     GDTOT_CRYPT = None
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
         lines = f.readlines()
         for line in lines:
-            try:
-                temp = line.strip().split()
-                DRIVE_NAMES.append(temp[0].replace("_", " "))
-                DRIVE_IDS.append(temp[1])
-            except:
-                pass
-            try:
+            temp = line.strip().split()
+            DRIVE_NAMES.append(temp[0].replace("_", " "))
+            DRIVE_IDS.append(temp[1])
+            if len(temp) > 2:
                 INDEX_URLS.append(temp[2])
-            except IndexError:
+            else:
                 INDEX_URLS.append(None)
 
 def create_account(sname):

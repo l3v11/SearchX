@@ -8,10 +8,9 @@ import time
 from io import FileIO
 from urllib.parse import parse_qs, urlparse
 from random import randrange
+from telegraph.exceptions import RetryAfterError
 from tenacity import retry, wait_exponential, stop_after_attempt, \
     retry_if_exception_type, RetryError
-
-from telegraph.exceptions import RetryAfterError
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -123,7 +122,7 @@ class GoogleDriveHelper:
         else:
             self.__service_account_index += 1
         self.__sa_count += 1
-        LOGGER.info(f"Authorizing with {self.__service_account_index}.json file")
+        LOGGER.info(f"Switching SA to {self.__service_account_index}.json file")
         self.__service = self.__authorize()
 
     @staticmethod
@@ -222,6 +221,7 @@ class GoogleDriveHelper:
                 msg = "File not found"
             else:
                 msg = err
+            LOGGER.error(msg)
             return msg, "", "", ""
         return "", size, name, files
 
@@ -234,9 +234,9 @@ class GoogleDriveHelper:
             return msg
         msg = ''
         try:
-            res = self.__service.files().delete(
-                      fileId=file_id,
-                      supportsAllDrives=IS_TEAM_DRIVE).execute()
+            self.__service.files().delete(
+                fileId=file_id,
+                supportsAllDrives=IS_TEAM_DRIVE).execute()
             msg = "Permanently deleted"
         except HttpError as err:
             err = str(err).replace('>', '').replace('<', '')
@@ -302,6 +302,7 @@ class GoogleDriveHelper:
                 msg = "Insufficient file permissions"
             else:
                 msg = err
+            LOGGER.error(msg)
         return msg
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
@@ -348,7 +349,7 @@ class GoogleDriveHelper:
                             return self.__copyFile(file_id, dest_id)
                     else:
                         self.__is_cancelled = True
-                        LOGGER.info(f"Warning: {reason}")
+                        LOGGER.error(f"Warning: {reason}")
                         raise err
                 else:
                     raise err
@@ -436,6 +437,7 @@ class GoogleDriveHelper:
                 msg = "File not found"
             else:
                 msg = err
+            LOGGER.error(msg)
         return msg
 
     def count(self, link):
@@ -477,6 +479,7 @@ class GoogleDriveHelper:
                 msg = "File not found"
             else:
                 msg = err
+            LOGGER.error(msg)
         return msg
 
     def _progress(self):
@@ -857,7 +860,7 @@ class GoogleDriveHelper:
                 self.telegraph_content[i-1] += f'<b> | <a href="https://graph.org/{self.telegraph_path[i]}">Next</a></b>'
 
                 self.__edit_page(
-                    TELEGRAPH[(acc_no - 1) if i % page_per_acc == 0 else acc_no],
+                    TELEGRAPH[(acc_no-1) if i % page_per_acc == 0 else acc_no],
                     self.telegraph_content[i-1],
                     self.telegraph_path[i-1])
 

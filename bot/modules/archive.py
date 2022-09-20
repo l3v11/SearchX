@@ -46,6 +46,8 @@ class ArchiveListener:
             download = download_dict[self.uid]
             name = str(download.name()).replace('/', '')
             gid = download.gid()
+        if name == 'None' or not os.path.exists(f'{self.dir}/{name}'):
+            name = os.listdir(self.dir)[-1]
         m_path = f'{self.dir}/{name}'
         size = get_path_size(m_path)
         if self.is_compress:
@@ -245,8 +247,8 @@ def extract_data(update, context):
     _archive(context.bot, update.message, is_extract=True)
 
 compress_handler = CommandHandler(BotCommands.CompressCommand, compress_data,
-                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
 extract_handler = CommandHandler(BotCommands.ExtractCommand, extract_data,
-                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                                 filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
 dispatcher.add_handler(compress_handler)
 dispatcher.add_handler(extract_handler)

@@ -1,4 +1,5 @@
-class _BotCommands:
+class __BotCommands:
+
     def __init__(self):
         self.StartCommand = 'start'
         self.ListCommand = 'find'
@@ -23,4 +24,4 @@ class _BotCommands:
         self.RestartCommand = 'restart'
         self.HelpCommand = 'help'
 
-BotCommands = _BotCommands()
+BotCommands = __BotCommands()

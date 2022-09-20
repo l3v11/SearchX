@@ -26,5 +26,5 @@ def countNode(update, context):
         sendMessage("<b>Send a Drive link along with command</b>", context.bot, update.message)
 
 count_handler = CommandHandler(BotCommands.CountCommand, countNode,
-                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                               filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
 dispatcher.add_handler(count_handler)

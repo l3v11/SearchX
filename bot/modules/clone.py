@@ -104,5 +104,5 @@ def cloneNode(update, context):
         sendMessage(help_msg, context.bot, update.message)
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
-                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                               filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
 dispatcher.add_handler(clone_handler)

@@ -1,8 +1,9 @@
 from pymongo import MongoClient
 
-from bot import AUTHORIZED_CHATS, DATABASE_URL
+from bot import AUTHORIZED_USERS, DATABASE_URL
 
 class DatabaseHelper:
+
     def __init__(self):
         self.mongodb = MongoClient(host=DATABASE_URL)["SearchX"]
         self.col = self.mongodb["users"]
@@ -15,13 +16,10 @@ class DatabaseHelper:
         self.col.delete_many({"user_id": user_id})
         return 'Authorization revoked'
 
-    def get_users(self):
-        return self.col.find().sort("user_id")
-
     def load_users(self):
-        users = self.get_users()
+        users = self.col.find().sort("user_id")
         for user in users:
-            AUTHORIZED_CHATS.add(user['user_id'])
+            AUTHORIZED_USERS.add(user['user_id'])
 
 if DATABASE_URL is not None:
     DatabaseHelper().load_users()

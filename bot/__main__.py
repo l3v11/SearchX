@@ -6,7 +6,7 @@ from psutil import cpu_percent, cpu_count, disk_usage, virtual_memory, net_io_co
 from sys import executable
 from telegram.ext import CommandHandler
 
-from bot import bot, LOGGER, botStartTime, AUTHORIZED_CHATS, TELEGRAPH, Interval, dispatcher, updater
+from bot import bot, LOGGER, botStartTime, TELEGRAPH, Interval, dispatcher, updater
 from bot.modules import archive, auth, cancel, clone, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
@@ -143,15 +143,15 @@ def main():
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
     ping_handler = CommandHandler(BotCommands.PingCommand, ping,
-                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
     stats_handler = CommandHandler(BotCommands.StatsCommand, stats,
-                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                                   filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
                                  filters=CustomFilters.owner_filter, run_async=True)
     restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
                                      filters=CustomFilters.owner_filter, run_async=True)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
-                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(stats_handler)

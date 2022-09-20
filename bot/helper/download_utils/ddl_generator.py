@@ -8,11 +8,6 @@ from urllib.parse import urlparse, parse_qs
 from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
 from bot.helper.ext_utils.exceptions import DDLExceptionHandler
 
-account = {
-    'email': APPDRIVE_EMAIL,
-    'passwd': APPDRIVE_PASS
-}
-
 def account_login(client, url, email, password):
     data = {
         'email': email,
@@ -35,7 +30,7 @@ def appdrive(url: str) -> str:
     client.headers.update({
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
     })
-    account_login(client, url, account['email'], account['passwd'])
+    account_login(client, url, APPDRIVE_EMAIL, APPDRIVE_PASS)
     res = client.get(url)
     try:
         key = re.findall(r'"key",\s+"(.*?)"', res.text)[0]
