@@ -19,7 +19,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import Error as GCError, HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
-from bot import LOGGER, DRIVE_NAMES, DRIVE_IDS, INDEX_URLS, PARENT_ID, \
+from bot import LOGGER, DRIVE_NAMES, DRIVE_IDS, INDEX_URLS, DRIVE_FOLDER_ID, \
     IS_TEAM_DRIVE, TELEGRAPH, USE_SERVICE_ACCOUNTS, INDEX_URL
 from bot.helper.ext_utils.bot_utils import SetInterval, get_readable_file_size
 from bot.helper.ext_utils.fs_utils import get_mime_type
@@ -308,13 +308,13 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
-    def __create_directory(self, directory_name, parent_id):
+    def __create_directory(self, directory_name, dest_id):
         file_metadata = {
             "name": directory_name,
             "mimeType": self.__G_DRIVE_DIR_MIME_TYPE
         }
-        if parent_id is not None:
-            file_metadata["parents"] = [parent_id]
+        if dest_id is not None:
+            file_metadata["parents"] = [dest_id]
         file = self.__service.files().create(
                    supportsAllDrives=True,
                    body=file_metadata).execute()
@@ -354,20 +354,20 @@ class GoogleDriveHelper:
                 else:
                     raise err
 
-    def __cloneFolder(self, name, local_path, folder_id, parent_id):
+    def __cloneFolder(self, name, local_path, folder_id, dest_id):
         files = self.__getFilesByFolderId(folder_id)
         if len(files) == 0:
-            return parent_id
+            return dest_id
         for file in files:
             if file.get('mimeType') == self.__G_DRIVE_DIR_MIME_TYPE:
                 self.__total_folders += 1
                 file_path = os.path.join(local_path, file.get('name'))
-                current_dir_id = self.__create_directory(file.get('name'), parent_id)
+                current_dir_id = self.__create_directory(file.get('name'), dest_id)
                 self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
             else:
                 self.__total_files += 1
                 self.transferred_size += int(file.get('size', 0))
-                self.__copyFile(file.get('id'), parent_id)
+                self.__copyFile(file.get('id'), dest_id)
             if self.__is_cancelled:
                 break
 
@@ -376,8 +376,6 @@ class GoogleDriveHelper:
         self.__start_time = time.time()
         self.__total_files = 0
         self.__total_folders = 0
-        parent_id = PARENT_ID
-        index_url = INDEX_URL
         try:
             file_id = self.__getIdFromUrl(link)
         except (KeyError, IndexError):
@@ -385,15 +383,17 @@ class GoogleDriveHelper:
             LOGGER.error(msg)
             return msg
         if dest_id != "":
-            parent_id = dest_id
             index_url = None
+        else:
+            dest_id = DRIVE_FOLDER_ID
+            index_url = INDEX_URL
         msg = ""
         try:
             meta = self.__getFileMetadata(file_id)
             name = meta.get("name")
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.__create_directory(meta.get('name'), parent_id)
+                dir_id = self.__create_directory(meta.get('name'), dest_id)
                 self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
@@ -411,7 +411,7 @@ class GoogleDriveHelper:
                     url = f'{index_url}/{url_path}/'
                     msg += f'<b> | <a href="{url}">Index Link</a></b>'
             else:
-                file = self.__copyFile(meta.get('id'), parent_id)
+                file = self.__copyFile(meta.get('id'), dest_id)
                 msg += f'<b>Name:</b> <code>{file.get("name")}</code>'
                 if mime_type is None:
                     mime_type = 'File'
@@ -492,13 +492,13 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
-    def __upload_file(self, file_path, file_name, mime_type, parent_id):
+    def __upload_file(self, file_path, file_name, mime_type, dest_id):
         file_metadata = {
             'name': file_name,
             'mimeType': mime_type
         }
-        if parent_id is not None:
-            file_metadata['parents'] = [parent_id]
+        if dest_id is not None:
+            file_metadata['parents'] = [dest_id]
         if os.path.getsize(file_path) == 0:
             media_body = MediaFileUpload(file_path, mimetype=mime_type, resumable=False)
             response = self.__service.files().create(
@@ -531,7 +531,7 @@ class GoogleDriveHelper:
                         raise err
                     if USE_SERVICE_ACCOUNTS:
                         self.__switchServiceAccount()
-                        return self.__upload_file(file_path, file_name, mime_type, parent_id)
+                        return self.__upload_file(file_path, file_name, mime_type, dest_id)
                     else:
                         LOGGER.error(f"Warning: {reason}")
                         raise err
@@ -546,24 +546,24 @@ class GoogleDriveHelper:
         download_url = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
         return download_url
 
-    def __upload_dir(self, input_directory, parent_id):
+    def __upload_dir(self, input_directory, dest_id):
         list_dirs = os.listdir(input_directory)
         if len(list_dirs) == 0:
-            return parent_id
+            return dest_id
         new_id = None
         for item in list_dirs:
             current_file_name = os.path.join(input_directory, item)
             if os.path.isdir(current_file_name):
-                current_dir_id = self.__create_directory(item, parent_id)
+                current_dir_id = self.__create_directory(item, dest_id)
                 new_id = self.__upload_dir(current_file_name, current_dir_id)
                 self.__total_folders += 1
             else:
                 mime_type = get_mime_type(current_file_name)
                 file_name = current_file_name.split("/")[-1]
                 # 'current_file_name' will have the full path
-                self.__upload_file(current_file_name, file_name, mime_type, parent_id)
+                self.__upload_file(current_file_name, file_name, mime_type, dest_id)
                 self.__total_files += 1
-                new_id = parent_id
+                new_id = dest_id
             if self.__is_cancelled:
                 break
         return new_id
@@ -576,14 +576,14 @@ class GoogleDriveHelper:
         try:
             if os.path.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type, PARENT_ID)
+                link = self.__upload_file(file_path, file_name, mime_type, DRIVE_FOLDER_ID)
                 if self.__is_cancelled:
                     return
                 if link is None:
                     raise Exception("The upload task has been manually cancelled")
             else:
                 mime_type = 'Folder'
-                dir_id = self.__create_directory(os.path.basename(os.path.abspath(file_name)), PARENT_ID)
+                dir_id = self.__create_directory(os.path.basename(os.path.abspath(file_name)), DRIVE_FOLDER_ID)
                 result = self.__upload_dir(file_path, dir_id)
                 if result is None:
                     raise Exception("The upload task has been manually cancelled")
@@ -687,7 +687,7 @@ class GoogleDriveHelper:
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             if "downloadQuotaExceeded" in err:
-                err = "Download quota exceeded."
+                err = "Download quota exceeded"
             elif "File not found" in err:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
@@ -762,27 +762,27 @@ class GoogleDriveHelper:
             elif search_type == '-f':
                 query += "mimeType != 'application/vnd.google-apps.folder' and "
         query += "trashed=false"
-        for parent_id in DRIVE_IDS:
-            if parent_id == "root":
+        for drive_id in DRIVE_IDS:
+            if drive_id == "root":
                 batch.add(
                     self.__service.files().list(
                         q=f"{query} and 'me' in owners",
                         pageSize=1000,
                         spaces='drive',
                         fields='files(id, name, mimeType, size)',
-                        orderBy='folder, modifiedTime desc'))
+                        orderBy='folder, name'))
             else:
                 batch.add(
                     self.__service.files().list(
                         supportsAllDrives=True,
                         includeItemsFromAllDrives=True,
-                        driveId=parent_id,
+                        driveId=drive_id,
                         q=query,
                         corpora='drive',
                         spaces='drive',
                         pageSize=1000,
                         fields='files(id, name, mimeType, size)',
-                        orderBy='folder, modifiedTime desc'))
+                        orderBy='folder, name'))
         batch.execute()
 
     def drive_list(self, file_name):

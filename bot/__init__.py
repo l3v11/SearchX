@@ -48,9 +48,6 @@ DRIVE_IDS = []
 INDEX_URLS = []
 TELEGRAPH = []
 
-def get_config(name: str):
-    return os.environ[name]
-
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
 # Key: update.message.message_id
@@ -60,30 +57,21 @@ download_dict = {}
 # Value: telegram.Message
 status_reply_dict = {}
 
-try:
-    BOT_TOKEN = get_config('BOT_TOKEN')
-except:
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
+if len(BOT_TOKEN) == 0:
     LOGGER.error("BOT_TOKEN env variable is missing")
     exit(1)
 
-try:
-    OWNER_ID = int(get_config('OWNER_ID'))
-except:
+OWNER_ID = os.environ.get('OWNER_ID', '')
+if len(OWNER_ID) == 0:
     LOGGER.error("OWNER_ID env variable is missing")
     exit(1)
+else:
+    OWNER_ID = int(OWNER_ID)
 
-try:
-    PARENT_ID = get_config('DRIVE_FOLDER_ID')
-except:
+DRIVE_FOLDER_ID = os.environ.get('DRIVE_FOLDER_ID', '')
+if len(DRIVE_FOLDER_ID) == 0:
     LOGGER.error("DRIVE_FOLDER_ID env variable is missing")
-    exit(1)
-
-try:
-    DOWNLOAD_DIR = get_config('DOWNLOAD_DIR')
-    if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
-except:
-    LOGGER.error("DOWNLOAD_DIR env variable is missing")
     exit(1)
 
 users = os.environ.get('AUTHORIZED_USERS', '')
@@ -101,6 +89,13 @@ IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
 USE_SERVICE_ACCOUNTS = os.environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
+
+DOWNLOAD_DIR = os.environ.get('DOWNLOAD_DIR', '')
+if len(DOWNLOAD_DIR) == 0:
+    DOWNLOAD_DIR = '/usr/src/app/downloads/'
+else:
+    if not DOWNLOAD_DIR.endswith('/'):
+        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
 STATUS_UPDATE_INTERVAL = os.environ.get('STATUS_UPDATE_INTERVAL', '')
 STATUS_UPDATE_INTERVAL = 10 if len(STATUS_UPDATE_INTERVAL) == 0 else int(STATUS_UPDATE_INTERVAL)
