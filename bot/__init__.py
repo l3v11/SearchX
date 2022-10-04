@@ -80,9 +80,7 @@ if len(users) != 0:
 else:
     AUTHORIZED_USERS = set()
 
-DATABASE_URL = os.environ.get('DATABASE_URL', '')
-if len(DATABASE_URL) == 0:
-    DATABASE_URL = None
+DATABASE_URL = os.environ.get('DATABASE_URL', None)
 
 IS_TEAM_DRIVE = os.environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
@@ -90,12 +88,9 @@ IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 USE_SERVICE_ACCOUNTS = os.environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
 
-DOWNLOAD_DIR = os.environ.get('DOWNLOAD_DIR', '')
-if len(DOWNLOAD_DIR) == 0:
-    DOWNLOAD_DIR = '/usr/src/app/downloads/'
-else:
-    if not DOWNLOAD_DIR.endswith('/'):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+DOWNLOAD_DIR = os.environ.get('DOWNLOAD_DIR', '/usr/src/app/downloads/')
+if not DOWNLOAD_DIR.endswith('/'):
+    DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
 STATUS_UPDATE_INTERVAL = os.environ.get('STATUS_UPDATE_INTERVAL', '')
 STATUS_UPDATE_INTERVAL = 10 if len(STATUS_UPDATE_INTERVAL) == 0 else int(STATUS_UPDATE_INTERVAL)
@@ -103,9 +98,7 @@ STATUS_UPDATE_INTERVAL = 10 if len(STATUS_UPDATE_INTERVAL) == 0 else int(STATUS_
 TELEGRAPH_ACCS = os.environ.get('TELEGRAPH_ACCS', '')
 TELEGRAPH_ACCS = 1 if len(TELEGRAPH_ACCS) == 0 else int(TELEGRAPH_ACCS)
 
-INDEX_URL = os.environ.get('INDEX_URL', '').rstrip("/")
-if len(INDEX_URL) == 0:
-    INDEX_URL = None
+INDEX_URL = os.environ.get('INDEX_URL', None).rstrip("/")
 
 ARCHIVE_LIMIT = os.environ.get('ARCHIVE_LIMIT', '')
 ARCHIVE_LIMIT = None if len(ARCHIVE_LIMIT) == 0 else float(ARCHIVE_LIMIT)
@@ -152,15 +145,10 @@ if len(DRIVE_LIST_URL) != 0:
     except Exception as err:
         LOGGER.error(f"DRIVE_LIST_URL: {err}")
 
-APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', '')
-APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', '')
-if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
-    APPDRIVE_EMAIL = None
-    APPDRIVE_PASS = None
+APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', None)
+APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', None)
 
-GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', '')
-if len(GDTOT_CRYPT) == 0:
-    GDTOT_CRYPT = None
+GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', None)
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:

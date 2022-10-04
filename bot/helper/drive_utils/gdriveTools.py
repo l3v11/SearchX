@@ -16,7 +16,7 @@ from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.errors import Error as GCError, HttpError
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 from bot import LOGGER, DRIVE_NAMES, DRIVE_IDS, INDEX_URLS, DRIVE_FOLDER_ID, \
@@ -138,16 +138,16 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=retry_if_exception_type(GCError))
+           retry=retry_if_exception_type(Exception))
     def __getFileMetadata(self, file_id):
         return self.__service.files().get(
-                   supportsAllDrives=True,
                    fileId=file_id,
+                   supportsAllDrives=True,
                    fields='name, id, mimeType, size').execute()
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=retry_if_exception_type(GCError))
+           retry=retry_if_exception_type(Exception))
     def __getFilesByFolderId(self, folder_id):
         page_token = None
         query = f"'{folder_id}' in parents and trashed = false"
@@ -236,7 +236,7 @@ class GoogleDriveHelper:
         try:
             self.__service.files().delete(
                 fileId=file_id,
-                supportsAllDrives=IS_TEAM_DRIVE).execute()
+                supportsAllDrives=True).execute()
             msg = "Permanently deleted"
         except HttpError as err:
             err = str(err).replace('>', '').replace('<', '')
@@ -259,9 +259,9 @@ class GoogleDriveHelper:
             'role': 'reader'
         }
         return self.__service.permissions().create(
-                   supportsAllDrives=True,
                    fileId=file_id,
-                   body=permissions).execute()
+                   body=permissions,
+                   supportsAllDrives=True).execute()
 
     def __set_permission_email(self, file_id, email):
         permissions = {
@@ -270,9 +270,9 @@ class GoogleDriveHelper:
             'emailAddress': email
         }
         return self.__service.permissions().create(
-                   supportsAllDrives=True,
                    fileId=file_id,
                    body=permissions,
+                   supportsAllDrives=True,
                    sendNotificationEmail=False).execute()
 
     def setPermission(self, link, access):
@@ -307,7 +307,7 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=retry_if_exception_type(GCError))
+           retry=retry_if_exception_type(Exception))
     def __create_directory(self, directory_name, dest_id):
         file_metadata = {
             "name": directory_name,
@@ -316,8 +316,8 @@ class GoogleDriveHelper:
         if dest_id is not None:
             file_metadata["parents"] = [dest_id]
         file = self.__service.files().create(
-                   supportsAllDrives=True,
-                   body=file_metadata).execute()
+                   body=file_metadata,
+                   supportsAllDrives=True).execute()
         file_id = file.get("id")
         if not IS_TEAM_DRIVE:
             self.__set_permission_public(file_id)
@@ -325,16 +325,16 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=retry_if_exception_type(GCError))
+           retry=retry_if_exception_type(Exception))
     def __copyFile(self, file_id, dest_id):
         body = {
             'parents': [dest_id]
         }
         try:
             res = self.__service.files().copy(
-                      supportsAllDrives=True,
                       fileId=file_id,
-                      body=body).execute()
+                      body=body,
+                      supportsAllDrives=True).execute()
             return res
         except HttpError as err:
             if err.resp.get('content-type', '').startswith('application/json'):
@@ -371,7 +371,7 @@ class GoogleDriveHelper:
             if self.__is_cancelled:
                 break
 
-    def clone(self, link, dest_id):
+    def clone(self, link, __dest_id):
         self.__is_cloning = True
         self.__start_time = time.time()
         self.__total_files = 0
@@ -382,7 +382,8 @@ class GoogleDriveHelper:
             msg = "Drive ID not found"
             LOGGER.error(msg)
             return msg
-        if dest_id != "":
+        if __dest_id != "":
+            dest_id = __dest_id
             index_url = None
         else:
             dest_id = DRIVE_FOLDER_ID
@@ -433,7 +434,7 @@ class GoogleDriveHelper:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-                    return self.clone(link, dest_id)
+                    return self.clone(link, __dest_id)
                 msg = "File not found"
             else:
                 msg = err
@@ -491,7 +492,7 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
+           retry=(retry_if_exception_type(Exception)))
     def __upload_file(self, file_path, file_name, mime_type, dest_id):
         file_metadata = {
             'name': file_name,
@@ -502,26 +503,24 @@ class GoogleDriveHelper:
         if os.path.getsize(file_path) == 0:
             media_body = MediaFileUpload(file_path, mimetype=mime_type, resumable=False)
             response = self.__service.files().create(
-                           supportsAllDrives=True,
                            body=file_metadata,
-                           media_body=media_body).execute()
+                           media_body=media_body,
+                           supportsAllDrives=True).execute()
             if not IS_TEAM_DRIVE:
                 self.__set_permission_public(response['id'])
             drive_file = self.__service.files().get(
-                             supportsAllDrives=True,
-                             fileId=response['id']).execute()
+                             fileId=response['id'],
+                             supportsAllDrives=True).execute()
             download_url = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
             return download_url
         media_body = MediaFileUpload(file_path, mimetype=mime_type, resumable=True,
                                      chunksize=50 * 1024 * 1024)
         drive_file = self.__service.files().create(
-                         supportsAllDrives=True,
                          body=file_metadata,
-                         media_body=media_body)
+                         media_body=media_body,
+                         supportsAllDrives=True)
         response = None
-        while response is None:
-            if self.__is_cancelled:
-                break
+        while response is None and not self.__is_cancelled:
             try:
                 self.__status, response = drive_file.next_chunk()
             except HttpError as err:
@@ -541,8 +540,8 @@ class GoogleDriveHelper:
         if not IS_TEAM_DRIVE:
             self.__set_permission_public(response['id'])
         drive_file = self.__service.files().get(
-                         supportsAllDrives=True,
-                         fileId=response['id']).execute()
+                         fileId=response['id'],
+                         supportsAllDrives=True).execute()
         download_url = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
         return download_url
 
@@ -610,9 +609,11 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6),
            stop=stop_after_attempt(3),
-           retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
+           retry=(retry_if_exception_type(Exception)))
     def __download_file(self, file_id, path, filename, mime_type):
-        request = self.__service.files().get_media(fileId=file_id)
+        request = self.__service.files().get_media(
+                      fileId=file_id,
+                      supportsAllDrives=True)
         filename = filename.replace('/', '')
         if len(filename.encode()) > 255:
             ext = os.path.splitext(filename)[1]
@@ -753,7 +754,7 @@ class GoogleDriveHelper:
             if response['files']:
                 self.response[request_id] = response
 
-    def __drive_query(self, DRIVE_IDS, search_type, file_name):
+    def __drive_query(self, drive_ids, search_type, file_name):
         batch = self.__service.new_batch_http_request(self.__receive_callback)
         query = f"name contains '{file_name}' and "
         if search_type is not None:
@@ -762,7 +763,7 @@ class GoogleDriveHelper:
             elif search_type == '-f':
                 query += "mimeType != 'application/vnd.google-apps.folder' and "
         query += "trashed=false"
-        for drive_id in DRIVE_IDS:
+        for drive_id in drive_ids:
             if drive_id == "root":
                 batch.add(
                     self.__service.files().list(

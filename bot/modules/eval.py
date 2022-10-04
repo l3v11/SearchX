@@ -4,13 +4,11 @@ import traceback
 
 from contextlib import redirect_stdout
 from io import StringIO, BytesIO
-from telegram import ParseMode
 from telegram.ext import CommandHandler
 
 from bot import dispatcher
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
 
 namespaces = {}
 
@@ -36,7 +34,7 @@ def send(msg, bot, update):
         bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"`{msg}`",
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode='MARKDOWN')
 
 def evaluate(update, context):
     bot = context.bot
