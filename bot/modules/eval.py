@@ -34,7 +34,7 @@ def send(msg, bot, update):
         bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"`{msg}`",
-            parse_mode='MARKDOWN')
+            parse_mode='Markdown')
 
 def evaluate(update, context):
     bot = context.bot

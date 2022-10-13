@@ -98,7 +98,9 @@ STATUS_UPDATE_INTERVAL = 10 if len(STATUS_UPDATE_INTERVAL) == 0 else int(STATUS_
 TELEGRAPH_ACCS = os.environ.get('TELEGRAPH_ACCS', '')
 TELEGRAPH_ACCS = 1 if len(TELEGRAPH_ACCS) == 0 else int(TELEGRAPH_ACCS)
 
-INDEX_URL = os.environ.get('INDEX_URL', None).rstrip("/")
+INDEX_URL = os.environ.get('INDEX_URL', '').rstrip("/")
+if len(INDEX_URL) == 0:
+    INDEX_URL = None
 
 ARCHIVE_LIMIT = os.environ.get('ARCHIVE_LIMIT', '')
 ARCHIVE_LIMIT = None if len(ARCHIVE_LIMIT) == 0 else float(ARCHIVE_LIMIT)
