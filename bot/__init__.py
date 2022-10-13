@@ -80,7 +80,9 @@ if len(users) != 0:
 else:
     AUTHORIZED_USERS = set()
 
-DATABASE_URL = os.environ.get('DATABASE_URL', None)
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+if len(DATABASE_URL) == 0:
+    DATABASE_URL = None
 
 IS_TEAM_DRIVE = os.environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
@@ -147,10 +149,15 @@ if len(DRIVE_LIST_URL) != 0:
     except Exception as err:
         LOGGER.error(f"DRIVE_LIST_URL: {err}")
 
-APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', None)
-APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', None)
+APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', '')
+APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', '')
+if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
+    APPDRIVE_EMAIL = None
+    APPDRIVE_PASS = None
 
-GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', None)
+GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', '')
+if len(GDTOT_CRYPT) == 0:
+    GDTOT_CRYPT = None
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:
