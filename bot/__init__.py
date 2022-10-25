@@ -82,7 +82,7 @@ else:
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if len(DATABASE_URL) == 0:
-    DATABASE_URL = None
+    DATABASE_URL = ''
 
 IS_TEAM_DRIVE = os.environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
@@ -102,13 +102,13 @@ TELEGRAPH_ACCS = 1 if len(TELEGRAPH_ACCS) == 0 else int(TELEGRAPH_ACCS)
 
 INDEX_URL = os.environ.get('INDEX_URL', '').rstrip("/")
 if len(INDEX_URL) == 0:
-    INDEX_URL = None
+    INDEX_URL = ''
 
 ARCHIVE_LIMIT = os.environ.get('ARCHIVE_LIMIT', '')
-ARCHIVE_LIMIT = None if len(ARCHIVE_LIMIT) == 0 else float(ARCHIVE_LIMIT)
+ARCHIVE_LIMIT = '' if len(ARCHIVE_LIMIT) == 0 else float(ARCHIVE_LIMIT)
 
 CLONE_LIMIT = os.environ.get('CLONE_LIMIT', '')
-CLONE_LIMIT = None if len(CLONE_LIMIT) == 0 else float(CLONE_LIMIT)
+CLONE_LIMIT = '' if len(CLONE_LIMIT) == 0 else float(CLONE_LIMIT)
 
 TOKEN_JSON_URL = os.environ.get('TOKEN_JSON_URL', '')
 if len(TOKEN_JSON_URL) != 0:
@@ -152,12 +152,12 @@ if len(DRIVE_LIST_URL) != 0:
 APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', '')
 APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', '')
 if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
-    APPDRIVE_EMAIL = None
-    APPDRIVE_PASS = None
+    APPDRIVE_EMAIL = ''
+    APPDRIVE_PASS = ''
 
 GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', '')
 if len(GDTOT_CRYPT) == 0:
-    GDTOT_CRYPT = None
+    GDTOT_CRYPT = ''
 
 if os.path.exists('drive_list'):
     with open('drive_list', 'r+') as f:

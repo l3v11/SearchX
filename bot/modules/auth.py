@@ -10,7 +10,7 @@ def authorize(update, context):
     user_id = ''
     reply_message = update.message.reply_to_message
     if len(context.args) == 1:
-        user_id = context.args[0]
+        user_id = int(context.args[0])
     elif reply_message:
         user_id = reply_message.from_user.id
     if user_id:
@@ -38,7 +38,7 @@ def unauthorize(update, context):
     user_id = ''
     reply_message = update.message.reply_to_message
     if len(context.args) == 1:
-        user_id = context.args[0]
+        user_id = int(context.args[0])
     elif reply_message:
         user_id = reply_message.from_user.id
     if user_id:

@@ -46,6 +46,7 @@ class GoogleDriveHelper:
         self.__total_folders = 0
         self.__total_files = 0
         self.__sa_count = 0
+        self.__service_account_index = 0
         self.__start_time = 0
         self.__total_time = 0
         self.__alt_auth = False

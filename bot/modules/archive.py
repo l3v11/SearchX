@@ -8,7 +8,7 @@ import threading
 from html import escape
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, dispatcher, DOWNLOAD_DIR, Interval, INDEX_URL, download_dict, download_dict_lock
+from bot import LOGGER, dispatcher, DOWNLOAD_DIR, Interval, INDEX_URL, download_dict, download_dict_lock, status_reply_dict_lock
 from bot.helper.download_utils.ddl_generator import appdrive, gdtot
 from bot.helper.download_utils.gd_downloader import add_gd_download
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
@@ -35,8 +35,9 @@ class ArchiveListener:
 
     def clean(self):
         try:
-            Interval[0].cancel()
-            Interval.clear()
+            with status_reply_dict_lock:
+                Interval[0].cancel()
+                Interval.clear()
             delete_all_messages()
         except:
             pass

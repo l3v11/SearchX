@@ -2,13 +2,12 @@ import time
 
 from telegram import InlineKeyboardMarkup
 from telegram.error import RetryAfter
-from telegram.message import Message
 
 from bot import bot, LOGGER, Interval, STATUS_UPDATE_INTERVAL, \
     status_reply_dict, status_reply_dict_lock
 from bot.helper.ext_utils.bot_utils import SetInterval, get_readable_message
 
-def sendMessage(text: str, bot, message: Message):
+def sendMessage(text, bot, message):
     try:
         return bot.sendMessage(message.chat_id,
                                reply_to_message_id=message.message_id,
@@ -22,7 +21,7 @@ def sendMessage(text: str, bot, message: Message):
         LOGGER.error(str(err))
         return
 
-def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMarkup):
+def sendMarkup(text, bot, message, reply_markup: InlineKeyboardMarkup):
     try:
         return bot.sendMessage(message.chat_id,
                                reply_to_message_id=message.message_id,
@@ -36,7 +35,7 @@ def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMar
         LOGGER.error(str(err))
         return
 
-def editMessage(text: str, message: Message, reply_markup=None):
+def editMessage(text, message, reply_markup=None):
     try:
         bot.editMessageText(text=text, message_id=message.message_id,
                             chat_id=message.chat.id,
@@ -50,14 +49,14 @@ def editMessage(text: str, message: Message, reply_markup=None):
         LOGGER.error(str(err))
         return str(err)
 
-def deleteMessage(bot, message: Message):
+def deleteMessage(bot, message):
     try:
         bot.deleteMessage(chat_id=message.chat.id,
                           message_id=message.message_id)
-    except Exception as err:
+    except:
         pass
 
-def sendLogFile(bot, message: Message):
+def sendLogFile(bot, message):
     with open('log.txt', 'rb') as f:
         bot.sendDocument(document=f, filename=f.name,
                          reply_to_message_id=message.message_id,
