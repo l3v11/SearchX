@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 
 from bot import LOGGER, AUTHORIZED_USERS, DATABASE_URL
 
