@@ -138,7 +138,10 @@ def main():
     if os.path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTML')
+        try:
+            bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTML')
+        except:
+            pass
         os.remove(".restartmsg")
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
