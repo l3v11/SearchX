@@ -594,7 +594,7 @@ class GoogleDriveHelper:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
-            self.__listener.onUploadError(err)
+            self.__listener.onUploadError(str(err))
             self.__is_errored = True
         finally:
             self.__updater.cancel()

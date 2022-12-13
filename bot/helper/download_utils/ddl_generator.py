@@ -2,70 +2,10 @@ import base64
 import re
 import requests
 
-from lxml import etree
 from urllib.parse import urlparse, parse_qs
 
-from bot import APPDRIVE_EMAIL, APPDRIVE_PASS, GDTOT_CRYPT
+from bot import GDTOT_CRYPT
 from bot.helper.ext_utils.exceptions import DDLExceptionHandler
-
-def account_login(client, url, email, password):
-    data = {
-        'email': email,
-        'password': password
-    }
-    client.post(f'https://{urlparse(url).netloc}/login', data=data)
-
-def gen_payload(data, boundary=f'{"-"*6}_'):
-    data_string = ''
-    for item in data:
-        data_string += f'{boundary}\r\n'
-        data_string += f'Content-Disposition: form-data; name="{item}"\r\n\r\n{data[item]}\r\n'
-    data_string += f'{boundary}--\r\n'
-    return data_string
-
-def appdrive(url: str) -> str:
-    if (APPDRIVE_EMAIL or APPDRIVE_PASS) is None:
-        raise DDLExceptionHandler("APPDRIVE_EMAIL and APPDRIVE_PASS env vars not provided")
-    client = requests.Session()
-    client.headers.update({
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
-    })
-    account_login(client, url, APPDRIVE_EMAIL, APPDRIVE_PASS)
-    res = client.get(url)
-    try:
-        key = re.findall(r'"key",\s+"(.*?)"', res.text)[0]
-    except IndexError:
-        raise DDLExceptionHandler("Invalid link")
-    ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
-    info = {}
-    info['error'] = False
-    info['link_type'] = 'login'  # direct/login
-    headers = {
-        "Content-Type": f"multipart/form-data; boundary={'-'*4}_",
-    }
-    data = {
-        'type': 1,
-        'key': key,
-        'action': 'original'
-    }
-    if len(ddl_btn):
-        info['link_type'] = 'direct'
-        data['action'] = 'direct'
-    while data['type'] <= 3:
-        try:
-            response = client.post(url, data=gen_payload(data), headers=headers).json()
-            break
-        except:
-            data['type'] += 1
-    if 'url' in response:
-        info['gdrive_link'] = response['url']
-    elif 'error' in response and response['error']:
-        info['error'] = True
-        info['message'] = response['message']
-    if not info['error']:
-        return info
-    else:
-        raise DDLExceptionHandler(f"{info['message']}")
 
 def gdtot(url: str) -> str:
     if GDTOT_CRYPT is None:

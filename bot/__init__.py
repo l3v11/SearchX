@@ -151,12 +151,6 @@ if len(DRIVE_LIST_URL) != 0:
     except Exception as err:
         LOGGER.error(f"DRIVE_LIST_URL: {err}")
 
-APPDRIVE_EMAIL = os.environ.get('APPDRIVE_EMAIL', '')
-APPDRIVE_PASS = os.environ.get('APPDRIVE_PASS', '')
-if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
-    APPDRIVE_EMAIL = None
-    APPDRIVE_PASS = None
-
 GDTOT_CRYPT = os.environ.get('GDTOT_CRYPT', '')
 if len(GDTOT_CRYPT) == 0:
     GDTOT_CRYPT = None

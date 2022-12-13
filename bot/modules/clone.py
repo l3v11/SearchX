@@ -4,14 +4,13 @@ import string
 from telegram.ext import CommandHandler
 
 from bot import LOGGER, dispatcher, CLONE_LIMIT, download_dict, download_dict_lock, Interval
-from bot.helper.download_utils.ddl_generator import appdrive, gdtot
+from bot.helper.download_utils.ddl_generator import gdtot
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import new_thread, get_readable_file_size, is_gdrive_link, \
-    is_appdrive_link, is_gdtot_link
+from bot.helper.ext_utils.bot_utils import new_thread, get_readable_file_size, is_gdrive_link, is_gdtot_link
 from bot.helper.ext_utils.exceptions import DDLExceptionHandler
 from bot.helper.status_utils.clone_status import CloneStatus
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, \
-    delete_all_messages, update_all_messages, sendStatusMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, delete_all_messages, \
+    update_all_messages, sendStatusMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 
@@ -33,17 +32,12 @@ def cloneNode(update, context):
             dest_id = args[1].strip()
         except IndexError:
             pass
-    is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
-    if any([is_appdrive, is_gdtot]):
+    if is_gdtot:
         msg = sendMessage(f"<b>Processing:</b> <code>{link}</code>", context.bot, update.message)
         LOGGER.info(f"Processing: {link}")
         try:
-            if is_appdrive:
-                appdict = appdrive(link)
-                link = appdict.get('gdrive_link')
-            if is_gdtot:
-                link = gdtot(link)
+            link = gdtot(link)
             deleteMessage(context.bot, msg)
         except DDLExceptionHandler as err:
             deleteMessage(context.bot, msg)
@@ -91,16 +85,12 @@ def cloneNode(update, context):
             except IndexError:
                 pass
         sendMessage(result, context.bot, update.message)
-        if is_appdrive:
-            if appdict.get('link_type') == 'login':
-                LOGGER.info(f"Deleting: {link}")
-                gd.deleteFile(link)
-        elif is_gdtot:
+        if is_gdtot:
             LOGGER.info(f"Deleting: {link}")
             gd.deleteFile(link)
     else:
         help_msg = '<b><u>Instructions</u></b>\nSend a link along with command'
-        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• AppDrive\n• GDToT'
+        help_msg += '\n\n<b><u>Supported Sites</u></b>\n• Google Drive\n• GDToT'
         sendMessage(help_msg, context.bot, update.message)
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
