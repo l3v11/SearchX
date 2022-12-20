@@ -7,13 +7,13 @@ from sys import executable
 from telegram.ext import CommandHandler
 
 from bot import bot, LOGGER, botStartTime, TELEGRAPH, Interval, dispatcher, updater
-from bot.modules import archive, auth, cancel, clone, count, delete, eval, list, permission, shell, status
+from bot.modules import archive, auth, bookmark, cancel, clone, count, delete, eval, list, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_builder import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendLogFile
 
 def start(update, context):
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
@@ -70,7 +70,7 @@ help_string_user = f'''
 <br><br>
 • <b>/{BotCommands.ListCommand}</b> &lt;query&gt;: Search data in Google Drive
 <br><br>
-• <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;dest_id&gt;: Clone data from Google Drive and GDToT (Destination ID optional)
+• <b>/{BotCommands.CloneCommand}</b> &lt;url&gt; &lt;drive_key&gt;: Clone data from Google Drive and GDToT (Drive Key optional)
 <br><br>
 • <b>/{BotCommands.CompressCommand}</b> &lt;url&gt;: Compress data from Google Drive and GDToT
 <br><br>
@@ -81,6 +81,8 @@ help_string_user = f'''
 • <b>/{BotCommands.CancelCommand}</b> &lt;gid&gt;: Cancel a task
 <br><br>
 • <b>/{BotCommands.StatusCommand}</b>: Get status of all tasks
+<br><br>
+• <b>/{BotCommands.BookmarksCommand}</b>: Get the list of bookmarked destination drives
 <br><br>
 • <b>/{BotCommands.PingCommand}</b>: Ping the bot
 <br><br>
@@ -101,6 +103,10 @@ help_string_admin = f'''
 • <b>/{BotCommands.PermissionCommand}</b> &lt;drive_url&gt; &lt;email&gt;: Set data permission in Google Drive (Email optional)
 <br><br>
 • <b>/{BotCommands.DeleteCommand}</b> &lt;drive_url&gt;: Delete data from Google Drive
+<br><br>
+• <b>/{BotCommands.AddBookmarkCommand}</b> &lt;drive_key&gt; &lt;drive_id&gt;: Add bookmark of a destination drive
+<br><br>
+• <b>/{BotCommands.RemBookmarkCommand}</b> &lt;drive_key&gt;: Remove bookmark of a destination drive
 <br><br>
 • <b>/{BotCommands.AuthorizeCommand}</b>: Grant authorization of an user
 <br><br>
@@ -131,7 +137,7 @@ def bot_help(update, context):
     button = ButtonMaker()
     button.build_button("User", f"https://graph.org/{help_user}")
     button.build_button("Admin", f"https://graph.org/{help_admin}")
-    sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
+    sendMessage(help_string, context.bot, update.message, button.build_menu(2))
 
 def main():
     start_cleanup()
@@ -139,22 +145,22 @@ def main():
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
         try:
-            bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id, parse_mode='HTML')
+            bot.editMessageText("<b>Restarted successfully</b>", chat_id, msg_id)
         except:
             pass
         os.remove(".restartmsg")
 
-    start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
+    start_handler = CommandHandler(BotCommands.StartCommand, start)
     ping_handler = CommandHandler(BotCommands.PingCommand, ping,
-                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
     stats_handler = CommandHandler(BotCommands.StatsCommand, stats,
-                                   filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                   filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
-                                 filters=CustomFilters.owner_filter, run_async=True)
+                                 filters=CustomFilters.owner_filter)
     restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
-                                     filters=CustomFilters.owner_filter, run_async=True)
+                                     filters=CustomFilters.owner_filter)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
-                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(stats_handler)

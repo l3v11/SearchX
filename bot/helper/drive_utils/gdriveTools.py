@@ -343,13 +343,12 @@ class GoogleDriveHelper:
                 if reason in ['userRateLimitExceeded', 'dailyLimitExceeded']:
                     if USE_SERVICE_ACCOUNTS:
                         if self.__sa_count == SERVICE_ACCOUNTS_NUMBER:
-                            self.__is_cancelled = True
+                            LOGGER.info("SA switch limit exceeded")
                             raise err
                         else:
                             self.__switchServiceAccount()
                             return self.__copyFile(file_id, dest_id)
                     else:
-                        self.__is_cancelled = True
                         LOGGER.error(f"Warning: {reason}")
                         raise err
                 else:
@@ -621,6 +620,8 @@ class GoogleDriveHelper:
             filename = f"{filename[:245]}{ext}"
             if self.name.endswith(ext):
                 self.name = filename
+        if self.__is_cancelled:
+            return
         fh = FileIO(f"{path}/{filename}", 'wb')
         downloader = MediaIoBaseDownload(fh, request, chunksize=50 * 1024 * 1024)
         done = False
@@ -637,7 +638,7 @@ class GoogleDriveHelper:
                         raise err
                     if USE_SERVICE_ACCOUNTS:
                         if self.__sa_count == SERVICE_ACCOUNTS_NUMBER:
-                            self.__is_cancelled = True
+                            LOGGER.info("SA switch limit exceeded")
                             raise err
                         else:
                             self.__switchServiceAccount()

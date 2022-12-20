@@ -47,6 +47,7 @@ DRIVE_NAMES = []
 DRIVE_IDS = []
 INDEX_URLS = []
 TELEGRAPH = []
+BOOKMARKS = {}
 
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
@@ -184,6 +185,7 @@ for i in range(TELEGRAPH_ACCS):
     create_account(sname)
 LOGGER.info(f"Generated {TELEGRAPH_ACCS} telegraph tokens")
 
-updater = tg.Updater(token=BOT_TOKEN, use_context=True)
+tgDefaults = tg.Defaults(parse_mode='HTML', allow_sending_without_reply=True, disable_web_page_preview=True, run_async=True)
+updater = tg.Updater(token=BOT_TOKEN, defaults=tgDefaults, use_context=True)
 bot = updater.bot
 dispatcher = updater.dispatcher

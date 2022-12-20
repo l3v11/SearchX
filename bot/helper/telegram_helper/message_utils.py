@@ -1,46 +1,29 @@
 import time
 
-from telegram import InlineKeyboardMarkup
 from telegram.error import RetryAfter
 
 from bot import bot, LOGGER, Interval, STATUS_UPDATE_INTERVAL, \
     status_reply_dict, status_reply_dict_lock
 from bot.helper.ext_utils.bot_utils import SetInterval, get_readable_message
 
-def sendMessage(text, bot, message):
+def sendMessage(text, bot, message, reply_markup=None):
     try:
-        return bot.sendMessage(message.chat_id,
+        return bot.sendMessage(chat_id=message.chat_id,
                                reply_to_message_id=message.message_id,
-                               text=text, parse_mode='HTML',
-                               disable_web_page_preview=True)
+                               text=text, reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
-        return sendMessage(text, bot, message)
-    except Exception as err:
-        LOGGER.error(str(err))
-        return
-
-def sendMarkup(text, bot, message, reply_markup: InlineKeyboardMarkup):
-    try:
-        return bot.sendMessage(message.chat_id,
-                               reply_to_message_id=message.message_id,
-                               text=text, reply_markup=reply_markup,
-                               parse_mode='HTML', disable_web_page_preview=True)
-    except RetryAfter as r:
-        LOGGER.warning(str(r))
-        time.sleep(r.retry_after * 1.5)
-        return sendMarkup(text, bot, message, reply_markup)
+        return sendMessage(text, bot, message, reply_markup)
     except Exception as err:
         LOGGER.error(str(err))
         return
 
 def editMessage(text, message, reply_markup=None):
     try:
-        bot.editMessageText(text=text, message_id=message.message_id,
-                            chat_id=message.chat.id,
-                            reply_markup=reply_markup, parse_mode='HTML',
-                            disable_web_page_preview=True)
+        bot.editMessageText(chat_id=message.chat.id,
+                            message_id=message.message_id,
+                            text=text, reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         time.sleep(r.retry_after * 1.5)
@@ -59,8 +42,8 @@ def deleteMessage(bot, message):
 def sendLogFile(bot, message):
     with open('log.txt', 'rb') as f:
         bot.sendDocument(document=f, filename=f.name,
-                         reply_to_message_id=message.message_id,
-                         chat_id=message.chat_id)
+                         chat_id=message.chat_id,
+                         reply_to_message_id=message.message_id)
 
 def delete_all_messages():
     with status_reply_dict_lock:

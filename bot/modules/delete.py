@@ -26,5 +26,5 @@ def deleteNode(update, context):
         sendMessage("<b>Send a Drive link along with command</b>", context.bot, update.message)
 
 delete_handler = CommandHandler(BotCommands.DeleteCommand, deleteNode,
-                                filters=CustomFilters.owner_filter, run_async=True)
+                                filters=CustomFilters.owner_filter)
 dispatcher.add_handler(delete_handler)

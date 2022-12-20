@@ -28,13 +28,13 @@ def shell(update, context):
             context.bot.send_document(
                 document=doc,
                 filename=doc.name,
-                reply_to_message_id=message.message_id,
-                chat_id=message.chat_id)
+                chat_id=message.chat_id,
+                reply_to_message_id=message.message_id)
     elif len(reply) != 0:
         message.reply_text(reply, parse_mode='HTML')
     else:
         message.reply_text('<b>Command executed</b>', parse_mode='HTML')
 
 shell_handler = CommandHandler(BotCommands.ShellCommand, shell,
-                               filters=CustomFilters.owner_filter, run_async=True)
+                               filters=CustomFilters.owner_filter)
 dispatcher.add_handler(shell_handler)

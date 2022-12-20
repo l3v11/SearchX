@@ -3,13 +3,13 @@ import string
 
 from telegram.ext import CommandHandler
 
-from bot import LOGGER, dispatcher, CLONE_LIMIT, download_dict, download_dict_lock, Interval
+from bot import LOGGER, dispatcher, Interval, BOOKMARKS, CLONE_LIMIT, download_dict, download_dict_lock
 from bot.helper.download_utils.ddl_generator import gdtot
 from bot.helper.drive_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import new_thread, get_readable_file_size, is_gdrive_link, is_gdtot_link
 from bot.helper.ext_utils.exceptions import DDLExceptionHandler
 from bot.helper.status_utils.clone_status import CloneStatus
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, delete_all_messages, \
+from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, delete_all_messages, \
     update_all_messages, sendStatusMessage
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -19,17 +19,20 @@ def cloneNode(update, context):
     args = update.message.text.split()
     reply_to = update.message.reply_to_message
     link = ''
+    key = ''
     dest_id = ''
     if len(args) > 1:
         link = args[1].strip()
         try:
-            dest_id = args[2].strip()
+            key = args[2].strip()
+            dest_id = BOOKMARKS[key]
         except IndexError:
             pass
     if reply_to:
         link = reply_to.text.split(maxsplit=1)[0].strip()
         try:
-            dest_id = args[1].strip()
+            key = args[1].strip()
+            dest_id = BOOKMARKS[key]
         except IndexError:
             pass
     is_gdtot = is_gdtot_link(link)
@@ -94,5 +97,5 @@ def cloneNode(update, context):
         sendMessage(help_msg, context.bot, update.message)
 
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
-                               filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                               filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 dispatcher.add_handler(clone_handler)

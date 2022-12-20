@@ -188,27 +188,25 @@ class ArchiveListener:
 def _archive(bot, message, is_compress=False, is_extract=False):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    name_arg = mesg[0].split('|', maxsplit=1)
     is_gdtot = False
+    link = ''
     if len(message_args) > 1:
         link = message_args[1].strip()
-        if link.startswith("pswd:"):
+        if link.startswith(('|', 'pswd:')):
             link = ''
-    else:
-        link = ''
-    if len(name_arg) > 1:
-        name = name_arg[1]
-        name = name.split(' pswd:')[0]
-        name = name.strip()
+    name = mesg[0].split('|', maxsplit=1)
+    if len(name) > 1:
+        if 'pswd:' in name[0]:
+            name = ''
+        else:
+            name = name[1].split('pswd:')[0].strip()
     else:
         name = ''
-    link = re.split(r"pswd:|\|", link)[0]
-    link = link.strip()
-    pswd_arg = mesg[0].split(' pswd: ')
-    if len(pswd_arg) > 1:
-        pswd = pswd_arg[1]
-    else:
-        pswd = None
+    pswd = mesg[0].split(' pswd: ')
+    pswd = pswd[1] if len(pswd) > 1 else None
+    if link != '':
+        link = re.split(r'pswd:|\|', link)[0]
+        link = link.strip()
     reply_to = message.reply_to_message
     if reply_to is not None:
         link = reply_to.text.split(maxsplit=1)[0].strip()
@@ -241,8 +239,8 @@ def extract_data(update, context):
     _archive(context.bot, update.message, is_extract=True)
 
 compress_handler = CommandHandler(BotCommands.CompressCommand, compress_data,
-                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                  filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 extract_handler = CommandHandler(BotCommands.ExtractCommand, extract_data,
-                                 filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                 filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 dispatcher.add_handler(compress_handler)
 dispatcher.add_handler(extract_handler)

@@ -7,8 +7,10 @@ data*
 .idea
 *.json
 *.pickle
+*.zip
 log.txt
 accounts/*
 drives.txt
 drive_list
+fly.toml
 /temp.py

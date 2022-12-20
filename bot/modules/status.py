@@ -25,5 +25,5 @@ def statusNode(update, context):
                 Interval.append(SetInterval(STATUS_UPDATE_INTERVAL, update_all_messages))
 
 status_handler = CommandHandler(BotCommands.StatusCommand, statusNode,
-                                filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 dispatcher.add_handler(status_handler)

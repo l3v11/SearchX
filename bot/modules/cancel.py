@@ -33,5 +33,5 @@ def cancelNode(update, context):
     dl.download().cancel_task()
 
 cancel_handler = CommandHandler(BotCommands.CancelCommand, cancelNode,
-                                filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                                filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 dispatcher.add_handler(cancel_handler)

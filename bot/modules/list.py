@@ -31,5 +31,5 @@ def list_drive(update, context):
         sendMessage(help_msg, context.bot, update.message)
 
 list_handler = CommandHandler(BotCommands.ListCommand, list_drive,
-                              filters=CustomFilters.authorized_user | CustomFilters.authorized_chat, run_async=True)
+                              filters=CustomFilters.authorized_user | CustomFilters.authorized_chat)
 dispatcher.add_handler(list_handler)

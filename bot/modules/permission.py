@@ -36,5 +36,5 @@ def permissionNode(update, context):
         sendMessage("<b>Send a Drive link along with command</b>", context.bot, update.message)
 
 permission_handler = CommandHandler(BotCommands.PermissionCommand, permissionNode,
-                                    filters=CustomFilters.owner_filter, run_async=True)
+                                    filters=CustomFilters.owner_filter)
 dispatcher.add_handler(permission_handler)
