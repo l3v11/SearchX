@@ -25,14 +25,20 @@ def cloneNode(update, context):
         link = args[1].strip()
         try:
             key = args[2].strip()
-            dest_id = BOOKMARKS[key]
+            try:
+                dest_id = BOOKMARKS[key]
+            except KeyError:
+                return sendMessage("Invalid Drive Key", context.bot, update.message)
         except IndexError:
             pass
     if reply_to:
         link = reply_to.text.split(maxsplit=1)[0].strip()
         try:
             key = args[1].strip()
-            dest_id = BOOKMARKS[key]
+            try:
+                dest_id = BOOKMARKS[key]
+            except KeyError:
+                return sendMessage("Invalid Drive Key", context.bot, update.message)
         except IndexError:
             pass
     is_gdtot = is_gdtot_link(link)

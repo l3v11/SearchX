@@ -25,7 +25,9 @@ SearchX is a multipurpose Telegram bot written in Python for Google Drive
 - Set data permission in Google Drive
 - Size Limit support for Clone, Compression and Extraction tasks
 - Destination change support for Clone tasks
-- MongoDB support for storing the list of authorized users
+- MongoDB database support
+- Bookmark support for storing Destination Drive IDs into database
+- Support for storing the list of authorized users into database
 - Index Link support
 - Multi-token telegraph support
 - Multi-page telegraph page results
@@ -62,8 +64,11 @@ cancel - Cancel a task
 status - Get status of all tasks
 share - Set data permission in Google Drive
 del - Delete data from Google Drive
-authorize - Grant authorization of an user
-unauthorize - Revoke authorization of an user
+addbm - Add bookmark of a destination drive
+rembm - Remove bookmark of a destination drive
+bookmarks - Get the list of bookmarked destination drives
+auth - Grant authorization of an user
+unauth - Revoke authorization of an user
 users - Get the list of authorized users
 shell - Execute shell commands
 eval - Evaluate Python expressions
