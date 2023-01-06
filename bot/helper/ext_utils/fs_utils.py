@@ -66,10 +66,9 @@ def get_path_size(path: str):
     return total_size
 
 def get_base_name(orig_path: str):
-    ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
-    if ext:
+    if ext:= [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]:
         ext = ext[0]
-        return re.split(ext + '$', orig_path, maxsplit=1, flags=re.I)[0]
+        return re.split(f'{ext}$', orig_path, maxsplit=1, flags=re.I)[0]
     else:
         raise ArchiveExceptionHandler("Unsupported archive file")
 

@@ -340,18 +340,19 @@ class GoogleDriveHelper:
         except HttpError as err:
             if err.resp.get('content-type', '').startswith('application/json'):
                 reason = json.loads(err.content).get('error').get('errors')[0].get('reason')
-                if reason in ['userRateLimitExceeded', 'dailyLimitExceeded']:
-                    if USE_SERVICE_ACCOUNTS:
-                        if self.__sa_count == SERVICE_ACCOUNTS_NUMBER:
-                            LOGGER.info("SA switch limit exceeded")
-                            raise err
-                        else:
-                            self.__switchServiceAccount()
-                            return self.__copyFile(file_id, dest_id)
-                    else:
-                        LOGGER.error(f"Warning: {reason}")
+                if reason not in ['userRateLimitExceeded', 'dailyLimitExceeded']:
+                    raise err
+                if USE_SERVICE_ACCOUNTS:
+                    if self.__sa_count >= SERVICE_ACCOUNTS_NUMBER:
+                        LOGGER.info("SA switch limit exceeded")
                         raise err
+                    else:
+                        if self.__is_cancelled:
+                            return
+                        self.__switchServiceAccount()
+                        return self.__copyFile(file_id, dest_id)
                 else:
+                    LOGGER.error(f"Warning: {reason}")
                     raise err
 
     def __cloneFolder(self, name, local_path, folder_id, dest_id):
@@ -529,8 +530,15 @@ class GoogleDriveHelper:
                     if reason not in ['userRateLimitExceeded', 'dailyLimitExceeded']:
                         raise err
                     if USE_SERVICE_ACCOUNTS:
-                        self.__switchServiceAccount()
-                        return self.__upload_file(file_path, file_name, mime_type, dest_id)
+                        if self.__sa_count >= SERVICE_ACCOUNTS_NUMBER:
+                            LOGGER.info("SA switch limit exceeded")
+                            raise err
+                        else:
+                            if self.__is_cancelled:
+                                return
+                            self.__switchServiceAccount()
+                            LOGGER.info(f"Warning: {reason}")
+                            return self.__upload_file(file_path, file_name, mime_type, dest_id)
                     else:
                         LOGGER.error(f"Warning: {reason}")
                         raise err
@@ -637,11 +645,14 @@ class GoogleDriveHelper:
                     if reason not in ['downloadQuotaExceeded', 'dailyLimitExceeded']:
                         raise err
                     if USE_SERVICE_ACCOUNTS:
-                        if self.__sa_count == SERVICE_ACCOUNTS_NUMBER:
+                        if self.__sa_count >= SERVICE_ACCOUNTS_NUMBER:
                             LOGGER.info("SA switch limit exceeded")
                             raise err
                         else:
+                            if self.__is_cancelled:
+                                return
                             self.__switchServiceAccount()
+                            LOGGER.info(f"Warning: {reason}")
                             return self.__download_file(file_id, path, filename, mime_type)
                     else:
                         LOGGER.error(f"Warning: {reason}")
@@ -682,7 +693,7 @@ class GoogleDriveHelper:
             if meta.get("mimeType") == self.__G_DRIVE_DIR_MIME_TYPE:
                 self.__download_folder(file_id, self.__path, self.name)
             else:
-                os.makedirs(self.__path)
+                os.makedirs(self.__path, exist_ok=True)
                 self.__download_file(file_id, self.__path, self.name, meta.get('mimeType'))
         except Exception as err:
             if isinstance(err, RetryError):

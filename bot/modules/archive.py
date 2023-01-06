@@ -1,7 +1,6 @@
 import os
 import re
 import requests
-import shutil
 import subprocess
 import threading
 
@@ -49,7 +48,7 @@ class ArchiveListener:
             gid = download.gid()
         if name == 'None' or not os.path.exists(f'{self.dir}/{name}'):
             name = os.listdir(self.dir)[-1]
-        m_path = f'{self.dir}/{name}'
+        m_path = f"{self.dir}/{name}"
         size = get_path_size(m_path)
         if self.is_compress:
             path = f"{m_path}.zip"
@@ -145,10 +144,8 @@ class ArchiveListener:
         sendMessage(msg, self.bot, self.message)
         clean_download(self.dir)
         with download_dict_lock:
-            try:
+            if self.uid in download_dict.keys():
                 del download_dict[self.uid]
-            except Exception as err:
-                LOGGER.error(err)
             count = len(download_dict)
         if count == 0:
             self.clean()
@@ -159,10 +156,8 @@ class ArchiveListener:
         error = error.replace('<', '').replace('>', '')
         clean_download(self.dir)
         with download_dict_lock:
-            try:
+            if self.uid in download_dict.keys():
                 del download_dict[self.uid]
-            except Exception as err:
-                LOGGER.error(err)
             count = len(download_dict)
         sendMessage(error, self.bot, self.message)
         if count == 0:
@@ -174,10 +169,8 @@ class ArchiveListener:
         error = error.replace('<', '').replace('>', '')
         clean_download(self.dir)
         with download_dict_lock:
-            try:
+            if self.uid in download_dict.keys():
                 del download_dict[self.uid]
-            except Exception as err:
-                LOGGER.error(err)
             count = len(download_dict)
         sendMessage(error, self.bot, self.message)
         if count == 0:
