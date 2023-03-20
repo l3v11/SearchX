@@ -7,7 +7,7 @@ from sys import executable
 from telegram.ext import CommandHandler
 
 from bot import bot, LOGGER, botStartTime, TELEGRAPH, Interval, dispatcher, updater
-from bot.modules import archive, auth, bookmark, cancel, clone, count, delete, eval, list, permission, shell, status
+from bot.modules import archive, auth, bookmark, cancel, clone, collage, count, delete, eval, frames, list, mediainfo, permission, shell, status
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -77,6 +77,12 @@ help_string_user = f'''
 • <b>/{BotCommands.ExtractCommand}</b> &lt;url&gt;: Extract data from Google Drive and GDToT
 <br><br>
 • <b>/{BotCommands.CountCommand}</b> &lt;drive_url&gt;: Count data from Google Drive
+<br><br>
+• <b>/{BotCommands.MediainfoCommand}</b> &lt;url&gt;: Generate mediainfo of a media file from Google Drive and URL
+<br><br>
+• <b>/{BotCommands.FramesCommand}</b> &lt;url&gt; &lt;count&gt;: Generate frames of a media file from Google Drive and URL (Count optional)
+<br><br>
+• <b>/{BotCommands.CollageCommand}</b> &lt;url&gt; &lt;grid&gt;: Generate collage of a media file from Google Drive and URL (Grid optional)
 <br><br>
 • <b>/{BotCommands.CancelCommand}</b> &lt;gid&gt;: Cancel a task
 <br><br>

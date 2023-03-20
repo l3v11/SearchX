@@ -117,6 +117,14 @@ class GoogleDriveHelper:
                 LOGGER.error("The token.json file is missing")
         return None
 
+    def __get_access_token(self):
+        creds = None
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', self.__OAUTH_SCOPE)
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            return creds.token
+
     def __switchServiceAccount(self):
         if self.__service_account_index == SERVICE_ACCOUNTS_NUMBER - 1:
             self.__service_account_index = 0
@@ -168,6 +176,36 @@ class GoogleDriveHelper:
             if page_token is None:
                 break
         return files
+
+    def fileinfo(self, link):
+        try:
+            file_id = self.__getIdFromUrl(link)
+        except (KeyError, IndexError):
+            msg = "Drive ID not found"
+            LOGGER.error(msg)
+            return msg, "", "", "", "", ""
+        try:
+            access_token = self.__get_access_token()
+            meta = self.__getFileMetadata(file_id)
+            name = meta.get("name")
+            size = get_readable_file_size(int(meta.get("size", 0)))
+            mime_type = meta.get("mimeType")
+        except Exception as err:
+            if isinstance(err, RetryError):
+                LOGGER.info(f"Total attempts: {err.last_attempt.attempt_number}")
+                err = err.last_attempt.exception()
+            err = str(err).replace('>', '').replace('<', '')
+            if "File not found" in err:
+                token_service = self.__alt_authorize()
+                if token_service is not None:
+                    self.__service = token_service
+                    return self.fileinfo(link)
+                msg = "File not found"
+            else:
+                msg = err
+            LOGGER.error(msg)
+            return msg, "", "", "", "", ""
+        return "", file_id, access_token, name, size, mime_type
 
     def __gDrive_file(self, filee):
         size = int(filee.get('size', 0))
