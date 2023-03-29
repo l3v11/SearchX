@@ -17,9 +17,9 @@ SearchX is a multipurpose Telegram bot written in Python for Google Drive
 ## Features
 
 - Search data in Google Drive
-- Clone data from Google Drive, AppDrive and GDToT
-- Compress data from Google Drive, AppDrive and GDToT
-- Extract data from Google Drive, AppDrive and GDToT
+- Clone data from Google Drive and GDToT
+- Compress data from Google Drive and GDToT
+- Extract data from Google Drive and GDToT
 - Count data from Google Drive
 - Generate mediainfo of media files from Google Drive and URL
 - Generate frames of media files from Google Drive and URL
