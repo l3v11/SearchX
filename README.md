@@ -91,17 +91,17 @@ help - Get help
 
 > [**Click here**](https://github.com/l3v11/SearchX/wiki/Changelog) to see the list of changes made to the bot
 
-## FAQ
+## FAQs
 
 > [**Click here**](https://github.com/l3v11/SearchX/wiki/Frequently-Asked-Questions) to read the answers to 
-some of the most common questions or problems users come across
+some of the most common questions and the problems users come across
 
 ## Credits
 
 [Levi](https://github.com/l3v11) *(Maintainer)* |
 [Shivam Jha](https://github.com/lzzy12) |
 [Sreeraj V R](https://github.com/SVR666) |
-[Kaizoku](https://github.com/animekaizoku) |
+[TheArchivists](https://github.com/thearchivists) |
 [Snape](https://github.com/snape541) |
 [Anas](https://github.com/anasty17) |
 [Yuuki](https://github.com/xcscxr) |
